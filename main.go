@@ -1,10 +1,11 @@
 package main
 
 import (
+	"github.com/aattwwss/telegram-expense-bot/config"
+	"github.com/caarlos0/env/v6"
 	"github.com/joho/godotenv"
 	"log"
 	"math/rand"
-	"os"
 	"time"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
@@ -26,6 +27,8 @@ func handleFunc(bot *tgbotapi.BotAPI, update tgbotapi.Update) {
 
 	// Extract the command from the Message.
 	switch update.Message.Command() {
+	case "start":
+		msg.Text = "Welcome to your expense tracker!"
 	case "help":
 		msg.Text = "I understand /sayhi and /status."
 	case "sayhi":
@@ -42,12 +45,18 @@ func handleFunc(bot *tgbotapi.BotAPI, update tgbotapi.Update) {
 }
 
 func main() {
+	//ctx := context.Background()
 	err := godotenv.Load()
 	if err != nil {
 		log.Fatal("Error loading .env file")
 	}
+	cfg := config.Config{}
+	if err := env.Parse(&cfg); err != nil {
+		log.Fatalf("%+v\n", err)
+	}
+	//dbLoaded, _ := db.LoadDB(ctx, cfg)
 
-	bot, err := tgbotapi.NewBotAPI(os.Getenv("TELEGRAM_API_TOKEN"))
+	bot, err := tgbotapi.NewBotAPI(cfg.TelegramApiToken)
 	if err != nil {
 		log.Panic(err)
 	}
