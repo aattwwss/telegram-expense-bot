@@ -3,16 +3,12 @@ package main
 import (
 	"github.com/aattwwss/telegram-expense-bot/config"
 	"github.com/caarlos0/env/v6"
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/joho/godotenv"
 	"log"
-	"math/rand"
-	"time"
-
-	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
 func handleFunc(bot *tgbotapi.BotAPI, update tgbotapi.Update) {
-	time.Sleep(time.Duration(rand.Intn(5)) * time.Second)
 	if update.Message == nil { // ignore any non-Message updates
 		return
 	}
@@ -24,7 +20,6 @@ func handleFunc(bot *tgbotapi.BotAPI, update tgbotapi.Update) {
 	// Create a new MessageConfig. We don't have text yet,
 	// so we leave it empty.
 	msg := tgbotapi.NewMessage(update.Message.Chat.ID, "")
-
 	// Extract the command from the Message.
 	switch update.Message.Command() {
 	case "start":
