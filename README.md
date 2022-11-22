@@ -5,4 +5,5 @@
 
 # Features
 - [ ] Sign up as a new user from new chat with bot
-- [ ] Add a transaction
+- [ ] Add a transaction as current user
+- [ ] Calculate transction per month/year
