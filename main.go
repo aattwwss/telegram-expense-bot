@@ -1,0 +1,72 @@
+package main
+
+import (
+	"github.com/joho/godotenv"
+	"log"
+	"math/rand"
+	"os"
+	"time"
+
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+)
+
+func handleFunc(bot *tgbotapi.BotAPI, update tgbotapi.Update) {
+	time.Sleep(time.Duration(rand.Intn(5)) * time.Second)
+	if update.Message == nil { // ignore any non-Message updates
+		return
+	}
+
+	if !update.Message.IsCommand() { // ignore any non-command Messages
+		return
+	}
+
+	// Create a new MessageConfig. We don't have text yet,
+	// so we leave it empty.
+	msg := tgbotapi.NewMessage(update.Message.Chat.ID, "")
+
+	// Extract the command from the Message.
+	switch update.Message.Command() {
+	case "help":
+		msg.Text = "I understand /sayhi and /status."
+	case "sayhi":
+		msg.Text = "Hi :)"
+	case "status":
+		msg.Text = "I'm ok."
+	default:
+		msg.Text = update.Message.Command()
+	}
+
+	if _, err := bot.Send(msg); err != nil {
+		log.Panic(err)
+	}
+}
+
+func main() {
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatal("Error loading .env file")
+	}
+
+	bot, err := tgbotapi.NewBotAPI(os.Getenv("TELEGRAM_API_TOKEN"))
+	if err != nil {
+		log.Panic(err)
+	}
+
+	bot.Debug = true
+
+	log.Printf("Authorized on account %s", bot.Self.UserName)
+
+	u := tgbotapi.NewUpdate(0)
+	u.Timeout = 60
+
+	updates := bot.GetUpdatesChan(u)
+
+	for i := 0; i < 5; i++ {
+		go func(bot *tgbotapi.BotAPI, update <-chan tgbotapi.Update) {
+			for update := range updates {
+				handleFunc(bot, update)
+			}
+		}(bot, updates)
+	}
+	select {}
+}
