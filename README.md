@@ -1,7 +1,7 @@
 # telegram-expenses-bot
 
 # Text Format
-- [item] [amount]
+- \<item\> \<amount\> [date]
 
 # Features
 - [ ] Sign up as a new user from new chat with bot
