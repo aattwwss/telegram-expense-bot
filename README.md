@@ -9,5 +9,9 @@
 - [ ] Add a transaction as current user
     - [ ] Selection of category 
     - [ ] Input text format to record or step by step input ???
-- [ ] Calculate transction per month/year
+- [ ] Calculate transaction per month/year
+  - [ ] Return summary in text
+  - [ ] Return summary in chart
 - [ ] Calculate by date range
+  - [ ] Return summary in text
+  - [ ] Return summary in chart
