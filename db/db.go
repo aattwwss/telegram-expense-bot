@@ -16,7 +16,7 @@ type Config struct {
 	Schema   string
 }
 
-func newConfig(cfg config.Config) Config {
+func newConfig(cfg config.EnvConfig) Config {
 	return Config{
 		Username: cfg.DbUsername,
 		Password: cfg.DbPassword,
@@ -31,7 +31,7 @@ func (c Config) connectionUrl() string {
 	return fmt.Sprintf("postgresql://%s:%s@%s:%s/%s?search_path=%s", c.Username, c.Password, c.Host, c.Port, c.Database, c.Schema)
 }
 
-func LoadDB(ctx context.Context, cfg config.Config) (*pgxpool.Pool, error) {
+func LoadDB(ctx context.Context, cfg config.EnvConfig) (*pgxpool.Pool, error) {
 	c := newConfig(cfg)
 	return pgxpool.New(ctx, c.connectionUrl())
 }

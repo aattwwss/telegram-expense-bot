@@ -1,6 +1,6 @@
 package config
 
-type Config struct {
+type EnvConfig struct {
 	DbUsername string `env:"DB_USERNAME"`
 	DbPassword string `env:"DB_PASSWORD"`
 	DbHost     string `env:"DB_HOST"`

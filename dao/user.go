@@ -11,8 +11,8 @@ type UserDAO struct {
 	db *pgxpool.Pool
 }
 
-func NewUserDao(db *pgxpool.Pool) *UserDAO {
-	return &UserDAO{db: db}
+func NewUserDao(db *pgxpool.Pool) UserDAO {
+	return UserDAO{db: db}
 }
 
 func (dao UserDAO) FindUserById(ctx context.Context, id int64) (*entity.User, error) {

@@ -1,14 +1,18 @@
 package main
 
 import (
+	"context"
 	"github.com/aattwwss/telegram-expense-bot/config"
+	"github.com/aattwwss/telegram-expense-bot/dao"
+	"github.com/aattwwss/telegram-expense-bot/db"
+	"github.com/aattwwss/telegram-expense-bot/handler"
 	"github.com/caarlos0/env/v6"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/joho/godotenv"
 	"log"
 )
 
-func handleFunc(bot *tgbotapi.BotAPI, update tgbotapi.Update) {
+func handleFunc(ctx context.Context, bot *tgbotapi.BotAPI, update tgbotapi.Update, commandHandler *handler.CommandHandler) {
 	if update.Message == nil { // ignore any non-Message updates
 		return
 	}
@@ -23,7 +27,7 @@ func handleFunc(bot *tgbotapi.BotAPI, update tgbotapi.Update) {
 	// Extract the command from the Message.
 	switch update.Message.Command() {
 	case "start":
-		msg.Text = "Welcome to your expense tracker!"
+		commandHandler.Start(ctx, &msg, update)
 	case "help":
 		msg.Text = "I understand /sayhi and /status."
 	case "sayhi":
@@ -40,16 +44,19 @@ func handleFunc(bot *tgbotapi.BotAPI, update tgbotapi.Update) {
 }
 
 func main() {
-	//ctx := context.Background()
+	ctx := context.Background()
 	err := godotenv.Load()
 	if err != nil {
 		log.Fatal("Error loading .env file")
 	}
-	cfg := config.Config{}
+	cfg := config.EnvConfig{}
 	if err := env.Parse(&cfg); err != nil {
 		log.Fatalf("%+v\n", err)
 	}
-	//dbLoaded, _ := db.LoadDB(ctx, cfg)
+	dbLoaded, _ := db.LoadDB(ctx, cfg)
+
+	userDAO := dao.NewUserDao(dbLoaded)
+	commandHandler := handler.NewCommandHandler(userDAO)
 
 	bot, err := tgbotapi.NewBotAPI(cfg.TelegramApiToken)
 	if err != nil {
@@ -68,7 +75,7 @@ func main() {
 	for i := 0; i < 5; i++ {
 		go func(bot *tgbotapi.BotAPI, update <-chan tgbotapi.Update) {
 			for update := range updates {
-				handleFunc(bot, update)
+				handleFunc(ctx, bot, update, &commandHandler)
 			}
 		}(bot, updates)
 	}
