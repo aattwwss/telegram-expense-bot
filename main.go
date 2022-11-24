@@ -13,11 +13,27 @@ import (
 	"os"
 )
 
-func handleFunc(ctx context.Context, bot *tgbotapi.BotAPI, update tgbotapi.Update, commandHandler *handler.CommandHandler) {
-	if update.Message == nil { // ignore any non-Message updates
-		return
+func handleCallback(ctx context.Context, bot *tgbotapi.BotAPI, update tgbotapi.Update, commandHandler *handler.CommandHandler) {
+
+	editMsgConfig := tgbotapi.EditMessageReplyMarkupConfig{
+		BaseEdit: tgbotapi.BaseEdit{
+			ChatID:      update.CallbackQuery.Message.Chat.ID,
+			MessageID:   update.CallbackQuery.Message.MessageID,
+			ReplyMarkup: nil,
+		},
+	}
+	if _, err := bot.Request(editMsgConfig); err != nil {
+		log.Printf("handleMessage error: %v", err)
 	}
 
+	msg := tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, update.CallbackQuery.Data)
+
+	//And finally, send a message containing the data received.
+	if _, err := bot.Send(msg); err != nil {
+		log.Printf("handleMessage error: %v", err)
+	}
+}
+func handleMessage(ctx context.Context, bot *tgbotapi.BotAPI, update tgbotapi.Update, commandHandler *handler.CommandHandler) {
 	msg := tgbotapi.NewMessage(update.Message.Chat.ID, "")
 	if update.Message.IsCommand() { // ignore any non-command Messages
 		// Create a new MessageConfig. We don't have text yet,
@@ -34,9 +50,9 @@ func handleFunc(ctx context.Context, bot *tgbotapi.BotAPI, update tgbotapi.Updat
 	} else {
 		commandHandler.Transact(ctx, &msg, update)
 	}
-
+	// Send the message.
 	if _, err := bot.Send(msg); err != nil {
-		log.Panic(err)
+		log.Printf("handleMessage error: %v", err)
 	}
 }
 
@@ -90,7 +106,11 @@ func main() {
 	for i := 0; i < 5; i++ {
 		go func(bot *tgbotapi.BotAPI, update <-chan tgbotapi.Update) {
 			for update := range updates {
-				handleFunc(ctx, bot, update, &commandHandler)
+				if update.Message != nil {
+					handleMessage(ctx, bot, update, &commandHandler)
+				} else if update.CallbackQuery != nil {
+					handleCallback(ctx, bot, update, &commandHandler)
+				}
 			}
 		}(bot, updates)
 	}

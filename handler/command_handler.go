@@ -69,6 +69,32 @@ func (handler CommandHandler) Help(ctx context.Context, msg *tgbotapi.MessageCon
 	return
 }
 
+//var numericKeyboard = tgbotapi.NewOneTimeReplyKeyboard(
+//	tgbotapi.NewKeyboardButtonRow(
+//		tgbotapi.NewKeyboardButton("1"),
+//		tgbotapi.NewKeyboardButton("2"),
+//		tgbotapi.NewKeyboardButton("3"),
+//	),
+//	tgbotapi.NewKeyboardButtonRow(
+//		tgbotapi.NewKeyboardButton("4"),
+//		tgbotapi.NewKeyboardButton("5"),
+//		tgbotapi.NewKeyboardButton("6"),
+//	),
+//)
+
+var inlineNumericKeyboard = tgbotapi.NewInlineKeyboardMarkup(
+	tgbotapi.NewInlineKeyboardRow(
+		tgbotapi.NewInlineKeyboardButtonURL("1.com", "http://1.com"),
+		tgbotapi.NewInlineKeyboardButtonData("2", "2"),
+		tgbotapi.NewInlineKeyboardButtonData("3", "3"),
+	),
+	tgbotapi.NewInlineKeyboardRow(
+		tgbotapi.NewInlineKeyboardButtonData("4", "4"),
+		tgbotapi.NewInlineKeyboardButtonData("5", "5"),
+		tgbotapi.NewInlineKeyboardButtonData("6", "6"),
+	),
+)
+
 func (handler CommandHandler) Transact(ctx context.Context, msg *tgbotapi.MessageConfig, update tgbotapi.Update) {
 	float, err := strconv.ParseFloat(update.Message.Text, 64)
 	if err != nil {
@@ -78,6 +104,7 @@ func (handler CommandHandler) Transact(ctx context.Context, msg *tgbotapi.Messag
 
 	amount := money.NewFromFloat(float, money.SGD)
 	log.Printf("%v", amount.Amount())
-	msg.Text = amount.Display()
+	msg.Text = "Select the categories this amount belongs to."
+	msg.ReplyMarkup = inlineNumericKeyboard
 	return
 }
