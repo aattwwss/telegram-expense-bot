@@ -47,7 +47,7 @@ func main() {
 	ctx := context.Background()
 	err := godotenv.Load()
 	if err != nil {
-		log.Fatal("Error loading .env file")
+		log.Fatal("Error loading local.env file")
 	}
 	cfg := config.EnvConfig{}
 	if err := env.Parse(&cfg); err != nil {
