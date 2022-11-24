@@ -7,7 +7,6 @@ import (
 	"github.com/aattwwss/telegram-expense-bot/entity"
 	"github.com/aattwwss/telegram-expense-bot/util"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
-	"log"
 	"strconv"
 )
 
@@ -103,8 +102,7 @@ func (handler CommandHandler) Transact(ctx context.Context, msg *tgbotapi.Messag
 	}
 
 	amount := money.NewFromFloat(float, money.SGD)
-	log.Printf("%v", amount.Amount())
-	msg.Text = "Select the categories this amount belongs to."
+	msg.Text = "Select the categories this amount belongs to." + amount.Display()
 	msg.ReplyMarkup = inlineNumericKeyboard
 	return
 }

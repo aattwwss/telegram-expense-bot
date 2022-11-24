@@ -9,7 +9,7 @@ import (
 	"github.com/caarlos0/env/v6"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/joho/godotenv"
-	"log"
+	"github.com/rs/zerolog/log"
 	"os"
 )
 
@@ -23,17 +23,19 @@ func handleCallback(ctx context.Context, bot *tgbotapi.BotAPI, update tgbotapi.U
 		},
 	}
 	if _, err := bot.Request(editMsgConfig); err != nil {
-		log.Printf("handleMessage error: %v", err)
+		log.Error().Msgf("handleMessage error: %v", err)
 	}
 
 	msg := tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, update.CallbackQuery.Data)
 
 	//And finally, send a message containing the data received.
 	if _, err := bot.Send(msg); err != nil {
-		log.Printf("handleMessage error: %v", err)
+		log.Error().Msgf("handleMessage error: %v", err)
 	}
 }
 func handleMessage(ctx context.Context, bot *tgbotapi.BotAPI, update tgbotapi.Update, commandHandler *handler.CommandHandler) {
+	log.Info().Msgf("Received: %v", update.Message.Text)
+
 	msg := tgbotapi.NewMessage(update.Message.Chat.ID, "")
 	if update.Message.IsCommand() { // ignore any non-command Messages
 		// Create a new MessageConfig. We don't have text yet,
@@ -52,7 +54,7 @@ func handleMessage(ctx context.Context, bot *tgbotapi.BotAPI, update tgbotapi.Up
 	}
 	// Send the message.
 	if _, err := bot.Send(msg); err != nil {
-		log.Printf("handleMessage error: %v", err)
+		log.Error().Msgf("handleMessage error: %v", err)
 	}
 }
 
@@ -75,13 +77,14 @@ func loadEnv() error {
 
 func main() {
 	ctx := context.Background()
+	//zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
 	err := loadEnv()
 	if err != nil {
-		log.Fatal("Error loading .env files")
+		log.Fatal().Msg("Error loading .env files")
 	}
 	cfg := config.EnvConfig{}
 	if err := env.Parse(&cfg); err != nil {
-		log.Fatalf("%+v\n", err)
+		log.Fatal().Err(err)
 	}
 	dbLoaded, _ := db.LoadDB(ctx, cfg)
 
@@ -91,7 +94,7 @@ func main() {
 
 	bot, err := tgbotapi.NewBotAPI(cfg.TelegramApiToken)
 	if err != nil {
-		log.Panic(err)
+		log.Fatal().Err(err)
 	}
 
 	bot.Debug = true
