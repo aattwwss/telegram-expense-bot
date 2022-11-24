@@ -13,6 +13,8 @@ const (
 	errorFindingUserMsg  = "Sorry there is a problem fetching your information.\n"
 	errorCreatingUserMsg = "Sorry there is a problem signing you up.\n"
 	signUpSuccessMsg     = "Congratulations! We can get you started right away!\n"
+	registerHereMsg      = "Looks like you have not registered in our system. Type /start to register!\n"
+	helpMsg              = "Type /start to register.\nType <category>, <price>, [date]\n"
 )
 
 type CommandHandler struct {
@@ -27,7 +29,6 @@ func NewCommandHandler(userDao dao.UserDAO) CommandHandler {
 
 func (handler CommandHandler) Start(ctx context.Context, msg *tgbotapi.MessageConfig, update tgbotapi.Update) {
 	msg.Text = "Welcome to your expense tracker!\n"
-	// if exists, return a welcome message. And maybe some summary of stuff?
 
 	teleUser := update.SentFrom()
 
@@ -56,5 +57,9 @@ func (handler CommandHandler) Start(ctx context.Context, msg *tgbotapi.MessageCo
 	}
 	msg.Text += signUpSuccessMsg
 	return
-	// else, create teleUser and do sign up process
+}
+
+func (handler CommandHandler) Help(ctx context.Context, msg *tgbotapi.MessageConfig, update tgbotapi.Update) {
+	msg.Text = helpMsg
+	return
 }

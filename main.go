@@ -18,25 +18,19 @@ func handleFunc(ctx context.Context, bot *tgbotapi.BotAPI, update tgbotapi.Updat
 		return
 	}
 
-	if !update.Message.IsCommand() { // ignore any non-command Messages
-		return
-	}
-
-	// Create a new MessageConfig. We don't have text yet,
-	// so we leave it empty.
 	msg := tgbotapi.NewMessage(update.Message.Chat.ID, "")
-	// Extract the command from the Message.
-	switch update.Message.Command() {
-	case "start":
-		commandHandler.Start(ctx, &msg, update)
-	case "help":
-		msg.Text = "I understand /sayhi and /status."
-	case "sayhi":
-		msg.Text = "Hi :)"
-	case "status":
-		msg.Text = "I'm ok."
-	default:
-		msg.Text = update.Message.Command()
+	if update.Message.IsCommand() { // ignore any non-command Messages
+		// Create a new MessageConfig. We don't have text yet,
+		// so we leave it empty.
+		// Extract the command from the Message.
+		switch update.Message.Command() {
+		case "start":
+			commandHandler.Start(ctx, &msg, update)
+		case "help":
+			commandHandler.Help(ctx, &msg, update)
+		default:
+			msg.Text = update.Message.Command()
+		}
 	}
 
 	if _, err := bot.Send(msg); err != nil {
