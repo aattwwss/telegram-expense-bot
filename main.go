@@ -46,25 +46,14 @@ func handleFunc(ctx context.Context, bot *tgbotapi.BotAPI, update tgbotapi.Updat
 
 func loadEnv() error {
 	appEnv := os.Getenv("APP_ENV")
-	if appEnv == "" {
-		appEnv = "dev"
-	}
-
-	err := godotenv.Load(".env." + appEnv + ".local")
-	if err != nil {
-		return err
-	}
-	if appEnv != "test" {
-		err := godotenv.Load(".env.dev.local")
+	if appEnv == "" || appEnv == "dev" {
+		err := godotenv.Load(".env.local")
 		if err != nil {
 			return err
 		}
 	}
-	err = godotenv.Load(".env." + appEnv)
-	if err != nil {
-		return err
-	}
-	err = godotenv.Load()
+
+	err := godotenv.Load()
 	if err != nil {
 		return err
 	}
