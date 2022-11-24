@@ -29,8 +29,10 @@ func handleFunc(ctx context.Context, bot *tgbotapi.BotAPI, update tgbotapi.Updat
 		case "help":
 			commandHandler.Help(ctx, &msg, update)
 		default:
-			msg.Text = update.Message.Command()
+			commandHandler.Help(ctx, &msg, update)
 		}
+	} else {
+		commandHandler.Help(ctx, &msg, update)
 	}
 
 	if _, err := bot.Send(msg); err != nil {
