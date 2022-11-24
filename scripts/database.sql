@@ -52,7 +52,7 @@ create table expenditure_bot.transaction
     datetime    timestamp with time zone not null,
     category_id integer                  not null
         references expenditure_bot.category,
-    description varchar(255),
+    description varchar(255) not null,
     user_id     bigint                   not null
         references expenditure_bot.telegram_user,
     amount      bigint  default 0        not null,

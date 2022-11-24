@@ -2,10 +2,13 @@ package handler
 
 import (
 	"context"
+	"github.com/Rhymond/go-money"
 	"github.com/aattwwss/telegram-expense-bot/dao"
 	"github.com/aattwwss/telegram-expense-bot/entity"
 	"github.com/aattwwss/telegram-expense-bot/util"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	"log"
+	"strconv"
 )
 
 const (
@@ -18,12 +21,14 @@ const (
 )
 
 type CommandHandler struct {
-	userDao dao.UserDAO
+	userDao        dao.UserDAO
+	transactionDao dao.TransactionDAO
 }
 
-func NewCommandHandler(userDao dao.UserDAO) CommandHandler {
+func NewCommandHandler(userDao dao.UserDAO, transactionDao dao.TransactionDAO) CommandHandler {
 	return CommandHandler{
-		userDao: userDao,
+		userDao:        userDao,
+		transactionDao: transactionDao,
 	}
 }
 
@@ -61,5 +66,18 @@ func (handler CommandHandler) Start(ctx context.Context, msg *tgbotapi.MessageCo
 
 func (handler CommandHandler) Help(ctx context.Context, msg *tgbotapi.MessageConfig, update tgbotapi.Update) {
 	msg.Text = helpMsg
+	return
+}
+
+func (handler CommandHandler) Transact(ctx context.Context, msg *tgbotapi.MessageConfig, update tgbotapi.Update) {
+	float, err := strconv.ParseFloat(update.Message.Text, 64)
+	if err != nil {
+		msg.Text = "not correct money format :("
+		return
+	}
+
+	amount := money.NewFromFloat(float, money.SGD)
+	log.Printf("%v", amount.Amount())
+	msg.Text = amount.Display()
 	return
 }

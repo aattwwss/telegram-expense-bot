@@ -32,7 +32,7 @@ func handleFunc(ctx context.Context, bot *tgbotapi.BotAPI, update tgbotapi.Updat
 			commandHandler.Help(ctx, &msg, update)
 		}
 	} else {
-		commandHandler.Help(ctx, &msg, update)
+		commandHandler.Transact(ctx, &msg, update)
 	}
 
 	if _, err := bot.Send(msg); err != nil {
@@ -70,7 +70,8 @@ func main() {
 	dbLoaded, _ := db.LoadDB(ctx, cfg)
 
 	userDAO := dao.NewUserDao(dbLoaded)
-	commandHandler := handler.NewCommandHandler(userDAO)
+	transactionDAO := dao.NewTransactionDAO(dbLoaded)
+	commandHandler := handler.NewCommandHandler(userDAO, transactionDAO)
 
 	bot, err := tgbotapi.NewBotAPI(cfg.TelegramApiToken)
 	if err != nil {
