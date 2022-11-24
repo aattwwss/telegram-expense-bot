@@ -7,27 +7,31 @@ import (
 	"github.com/aattwwss/telegram-expense-bot/entity"
 	"github.com/aattwwss/telegram-expense-bot/util"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	"github.com/rs/zerolog/log"
 	"strconv"
 )
 
 const (
-	userExistsMsg        = "Welcome back! These are the summary of your transactions: \n"
-	errorFindingUserMsg  = "Sorry there is a problem fetching your information.\n"
-	errorCreatingUserMsg = "Sorry there is a problem signing you up.\n"
-	signUpSuccessMsg     = "Congratulations! We can get you started right away!\n"
-	registerHereMsg      = "Looks like you have not registered in our system. Type /start to register!\n"
-	helpMsg              = "Type /start to register.\nType <category>, <price>, [date]\n"
+	userExistsMsg          = "Welcome back! These are the summary of your transactions: \n"
+	errorFindingUserMsg    = "Sorry there is a problem fetching your information.\n"
+	errorCreatingUserMsg   = "Sorry there is a problem signing you up.\n"
+	signUpSuccessMsg       = "Congratulations! We can get you started right away!\n"
+	registerHereMsg        = "Looks like you have not registered in our system. Type /start to register!\n"
+	helpMsg                = "Type /start to register.\nType <category>, <price>, [date]\n"
+	categoriesInlineColNum = 3.0
 )
 
 type CommandHandler struct {
 	userDao        dao.UserDAO
 	transactionDao dao.TransactionDAO
+	categoryDao    dao.CategoryDAO
 }
 
-func NewCommandHandler(userDao dao.UserDAO, transactionDao dao.TransactionDAO) CommandHandler {
+func NewCommandHandler(userDao dao.UserDAO, transactionDao dao.TransactionDAO, categoryDao dao.CategoryDAO) CommandHandler {
 	return CommandHandler{
 		userDao:        userDao,
 		transactionDao: transactionDao,
+		categoryDao:    categoryDao,
 	}
 }
 
@@ -68,32 +72,6 @@ func (handler CommandHandler) Help(ctx context.Context, msg *tgbotapi.MessageCon
 	return
 }
 
-//var numericKeyboard = tgbotapi.NewOneTimeReplyKeyboard(
-//	tgbotapi.NewKeyboardButtonRow(
-//		tgbotapi.NewKeyboardButton("1"),
-//		tgbotapi.NewKeyboardButton("2"),
-//		tgbotapi.NewKeyboardButton("3"),
-//	),
-//	tgbotapi.NewKeyboardButtonRow(
-//		tgbotapi.NewKeyboardButton("4"),
-//		tgbotapi.NewKeyboardButton("5"),
-//		tgbotapi.NewKeyboardButton("6"),
-//	),
-//)
-
-var inlineNumericKeyboard = tgbotapi.NewInlineKeyboardMarkup(
-	tgbotapi.NewInlineKeyboardRow(
-		tgbotapi.NewInlineKeyboardButtonURL("1.com", "http://1.com"),
-		tgbotapi.NewInlineKeyboardButtonData("2", "2"),
-		tgbotapi.NewInlineKeyboardButtonData("3", "3"),
-	),
-	tgbotapi.NewInlineKeyboardRow(
-		tgbotapi.NewInlineKeyboardButtonData("4", "4"),
-		tgbotapi.NewInlineKeyboardButtonData("5", "5"),
-		tgbotapi.NewInlineKeyboardButtonData("6", "6"),
-	),
-)
-
 func (handler CommandHandler) Transact(ctx context.Context, msg *tgbotapi.MessageConfig, update tgbotapi.Update) {
 	float, err := strconv.ParseFloat(update.Message.Text, 64)
 	if err != nil {
@@ -103,6 +81,31 @@ func (handler CommandHandler) Transact(ctx context.Context, msg *tgbotapi.Messag
 
 	amount := money.NewFromFloat(float, money.SGD)
 	msg.Text = "Select the categories this amount belongs to." + amount.Display()
-	msg.ReplyMarkup = inlineNumericKeyboard
+
+	categories, err := handler.categoryDao.FindByTransactionTypeId(ctx, 1)
+	if err != nil {
+		log.Error().Err(err)
+		msg.Text = "Sorry we cannot handle your transaction right now :("
+		return
+	}
+
+	numOfRows := (len(categories) + 1) / categoriesInlineColNum
+	var categoriesKeyboards [][]tgbotapi.InlineKeyboardButton
+
+	for i := 0; i < numOfRows; i++ {
+		row := tgbotapi.NewInlineKeyboardRow()
+		for j := 0; j < categoriesInlineColNum; j++ {
+			catIndex := categoriesInlineColNum*i + j
+			if catIndex == len(categories) {
+				break
+			}
+			category := categories[catIndex]
+			button := tgbotapi.NewInlineKeyboardButtonData(category.Name, strconv.FormatInt(category.Id, 10))
+			row = append(row, button)
+		}
+		categoriesKeyboards = append(categoriesKeyboards, row)
+	}
+
+	msg.ReplyMarkup = tgbotapi.InlineKeyboardMarkup{InlineKeyboard: categoriesKeyboards}
 	return
 }

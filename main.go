@@ -89,7 +89,9 @@ func main() {
 
 	userDAO := dao.NewUserDao(dbLoaded)
 	transactionDAO := dao.NewTransactionDAO(dbLoaded)
-	commandHandler := handler.NewCommandHandler(userDAO, transactionDAO)
+	categoryDao := dao.NewCategoryDAO(dbLoaded)
+
+	commandHandler := handler.NewCommandHandler(userDAO, transactionDAO, categoryDao)
 	callbackHandler := handler.NewCallbackHandler(userDAO, transactionDAO)
 
 	bot, err := tgbotapi.NewBotAPI(cfg.TelegramApiToken)
@@ -97,7 +99,7 @@ func main() {
 		log.Fatal().Err(err)
 	}
 
-	bot.Debug = true
+	//bot.Debug = true
 
 	log.Printf("Authorized on account %s", bot.Self.UserName)
 

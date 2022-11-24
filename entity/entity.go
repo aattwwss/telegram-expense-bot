@@ -11,11 +11,17 @@ type User struct {
 }
 
 type Transaction struct {
-	Id          int
+	Id          int64
 	Datetime    time.Time
 	CategoryId  int
 	Description string
 	UserId      int64
 	Amount      int64
 	Currency    string
+}
+
+type Category struct {
+	Id                int64
+	Name              string
+	TransactionTypeId int64
 }
