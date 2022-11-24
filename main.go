@@ -10,6 +10,7 @@ import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/joho/godotenv"
 	"log"
+	"os"
 )
 
 func handleFunc(ctx context.Context, bot *tgbotapi.BotAPI, update tgbotapi.Update, commandHandler *handler.CommandHandler) {
@@ -43,11 +44,39 @@ func handleFunc(ctx context.Context, bot *tgbotapi.BotAPI, update tgbotapi.Updat
 	}
 }
 
+func loadEnv() error {
+	appEnv := os.Getenv("APP_ENV")
+	if appEnv == "" {
+		appEnv = "dev"
+	}
+
+	err := godotenv.Load(".env." + appEnv + ".local")
+	if err != nil {
+		return err
+	}
+	if appEnv != "test" {
+		err := godotenv.Load(".env.dev.local")
+		if err != nil {
+			return err
+		}
+	}
+	err = godotenv.Load(".env." + appEnv)
+	if err != nil {
+		return err
+	}
+	err = godotenv.Load()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func main() {
 	ctx := context.Background()
-	err := godotenv.Load()
+	err := loadEnv()
 	if err != nil {
-		log.Fatal("Error loading local.env file")
+		log.Fatal("Error loading .env files")
 	}
 	cfg := config.EnvConfig{}
 	if err := env.Parse(&cfg); err != nil {
