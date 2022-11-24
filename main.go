@@ -13,8 +13,7 @@ import (
 	"os"
 )
 
-func handleCallback(ctx context.Context, bot *tgbotapi.BotAPI, update tgbotapi.Update, commandHandler *handler.CommandHandler) {
-
+func handleCallback(ctx context.Context, bot *tgbotapi.BotAPI, update tgbotapi.Update, commandHandler *handler.CallbackHandler) {
 	editMsgConfig := tgbotapi.EditMessageReplyMarkupConfig{
 		BaseEdit: tgbotapi.BaseEdit{
 			ChatID:      update.CallbackQuery.Message.Chat.ID,
@@ -91,6 +90,7 @@ func main() {
 	userDAO := dao.NewUserDao(dbLoaded)
 	transactionDAO := dao.NewTransactionDAO(dbLoaded)
 	commandHandler := handler.NewCommandHandler(userDAO, transactionDAO)
+	callbackHandler := handler.NewCallbackHandler(userDAO, transactionDAO)
 
 	bot, err := tgbotapi.NewBotAPI(cfg.TelegramApiToken)
 	if err != nil {
@@ -106,13 +106,13 @@ func main() {
 
 	updates := bot.GetUpdatesChan(u)
 
-	for i := 0; i < 5; i++ {
+	for i := 0; i < 2; i++ {
 		go func(bot *tgbotapi.BotAPI, update <-chan tgbotapi.Update) {
 			for update := range updates {
 				if update.Message != nil {
 					handleMessage(ctx, bot, update, &commandHandler)
 				} else if update.CallbackQuery != nil {
-					handleCallback(ctx, bot, update, &commandHandler)
+					handleCallback(ctx, bot, update, &callbackHandler)
 				}
 			}
 		}(bot, updates)
