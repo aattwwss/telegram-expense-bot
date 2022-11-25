@@ -8,6 +8,7 @@ import (
 	"github.com/aattwwss/telegram-expense-bot/util"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/rs/zerolog/log"
+	"math"
 	"strconv"
 )
 
@@ -18,7 +19,7 @@ const (
 	signUpSuccessMsg       = "Congratulations! We can get you started right away!\n"
 	registerHereMsg        = "Looks like you have not registered in our system. Type /start to register!\n"
 	helpMsg                = "Type /start to register.\nType <category>, <price>, [date]\n"
-	categoriesInlineColNum = 3.0
+	categoriesInlineColNum = 3
 )
 
 type CommandHandler struct {
@@ -89,13 +90,15 @@ func (handler CommandHandler) Transact(ctx context.Context, msg *tgbotapi.Messag
 		return
 	}
 
-	numOfRows := (len(categories) + 1) / categoriesInlineColNum
+	//numOfRows := (len(categories) + 1) / categoriesInlineColNum
+	numOfRows := roundUpDivision(len(categories), categoriesInlineColNum)
 	var categoriesKeyboards [][]tgbotapi.InlineKeyboardButton
 
 	for i := 0; i < numOfRows; i++ {
 		row := tgbotapi.NewInlineKeyboardRow()
 		for j := 0; j < categoriesInlineColNum; j++ {
 			catIndex := categoriesInlineColNum*i + j
+			log.Info().Msgf("Row: %v Col: %v Index: %v", i, j, catIndex)
 			if catIndex == len(categories) {
 				break
 			}
@@ -108,4 +111,10 @@ func (handler CommandHandler) Transact(ctx context.Context, msg *tgbotapi.Messag
 
 	msg.ReplyMarkup = tgbotapi.InlineKeyboardMarkup{InlineKeyboard: categoriesKeyboards}
 	return
+}
+
+func roundUpDivision(dividend int, divisor int) int {
+	quotient := float64(dividend) / float64(divisor)
+	quotientCeiling := math.Ceil(quotient)
+	return int(quotientCeiling)
 }
