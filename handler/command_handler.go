@@ -54,13 +54,22 @@ func (handler CommandHandler) Start(ctx context.Context, msg *tgbotapi.MessageCo
 		return
 	}
 
+	//entityUser := entity.User{
+	//	Id:        teleUser.ID,
+	//	IsBot:     teleUser.IsBot,
+	//	FirstName: teleUser.FirstName,
+	//	LastName:  util.Ptr(teleUser.LastName),
+	//	Username:  util.Ptr(teleUser.UserName),
+	//}
+
 	entityUser := entity.User{
 		Id:        teleUser.ID,
 		IsBot:     teleUser.IsBot,
-		FirstName: teleUser.FirstName,
-		LastName:  util.Ptr(teleUser.LastName),
-		Username:  util.Ptr(teleUser.UserName),
+		FirstName: "",
+		LastName:  util.Ptr(""),
+		Username:  util.Ptr(""),
 	}
+
 	err = handler.userDao.Insert(ctx, entityUser)
 	if err != nil {
 		msg.Text += errorCreatingUserMsg

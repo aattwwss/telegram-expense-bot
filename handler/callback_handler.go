@@ -50,7 +50,7 @@ func (handler CallbackHandler) FromCategory(ctx context.Context, msg *tgbotapi.M
 	}
 
 	transaction := entity.Transaction{
-		Datetime:    time.Time{},
+		Datetime:    time.Now(),
 		CategoryId:  categoryId,
 		Description: "",
 		UserId:      callbackQuery.From.ID,
