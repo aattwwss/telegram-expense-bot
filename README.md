@@ -9,9 +9,9 @@
 - [ ] Add CICD from github actions to deploy to remote server 
   - [ ] ~~Build image -> deploy to docker hub -> trigger deployment in remote server~~
   - [ ] Pull from remote and build and run :(
--[ ] Add a transaction as current user
-    - [ ] Selection of category 
-    - [ ] Input text format to record or step by step input ???
+-[x] Add a transaction as current user
+    - [x] Selection of category 
+    - [ ] ~~Input text format to record or step by step input ???~~
 - [ ] Calculate transaction per month/year
   - [ ] Return summary in text
   - [ ] Return summary in chart

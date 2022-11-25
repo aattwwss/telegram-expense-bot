@@ -2,9 +2,11 @@ package handler
 
 import (
 	"context"
+	"fmt"
 	"github.com/Rhymond/go-money"
 	"github.com/aattwwss/telegram-expense-bot/dao"
 	"github.com/aattwwss/telegram-expense-bot/entity"
+	"github.com/aattwwss/telegram-expense-bot/message"
 	"github.com/aattwwss/telegram-expense-bot/util"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/rs/zerolog/log"
@@ -81,7 +83,7 @@ func (handler CommandHandler) Transact(ctx context.Context, msg *tgbotapi.Messag
 	}
 
 	amount := money.NewFromFloat(float, money.SGD)
-	msg.Text = "Select the categories this amount belongs to." + amount.Display()
+	msg.Text = fmt.Sprintf(message.TransactionReplyMsg+"%v", amount.AsMajorUnits())
 
 	categories, err := handler.categoryDao.FindByTransactionTypeId(ctx, 1)
 	if err != nil {

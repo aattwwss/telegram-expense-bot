@@ -2,9 +2,16 @@ package handler
 
 import (
 	"context"
+	"fmt"
+	"github.com/Rhymond/go-money"
 	"github.com/aattwwss/telegram-expense-bot/dao"
+	"github.com/aattwwss/telegram-expense-bot/entity"
+	"github.com/aattwwss/telegram-expense-bot/message"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	"github.com/rs/zerolog/log"
 	"strconv"
+	"strings"
+	"time"
 )
 
 type CallbackHandler struct {
@@ -21,17 +28,50 @@ func NewCallbackHandler(userDao dao.UserDAO, transactionDao dao.TransactionDAO, 
 	}
 }
 
-func (handler CallbackHandler) FromCategory(ctx context.Context, msg *tgbotapi.MessageConfig, callbackQuery *tgbotapi.CallbackQuery, idString string) {
+func (handler CallbackHandler) FromCategory(ctx context.Context, msg *tgbotapi.MessageConfig, callbackQuery *tgbotapi.CallbackQuery, data string) {
+	text := callbackQuery.Message.Text
 
-	id, err := strconv.Atoi(idString)
+	categoryId, err := strconv.Atoi(data)
+	if err != nil {
+		log.Error().Msgf("FromCategory error: %v", err)
+		msg.Text = "Something went wrong :("
+		return
+	}
+	category, err := handler.categoryDao.GetById(ctx, categoryId)
 	if err != nil {
 		msg.Text = "Something went wrong :("
 		return
 	}
-	category, err := handler.categoryDao.GetById(ctx, id)
+	moneyTransacted, err := parseMoneyFromTransactionCallback(text, money.SGD)
 	if err != nil {
+		log.Error().Msgf("FromCategory error: %v", err)
 		msg.Text = "Something went wrong :("
 		return
 	}
-	msg.Text = category.Name
+
+	transaction := entity.Transaction{
+		Datetime:    time.Time{},
+		CategoryId:  categoryId,
+		Description: "",
+		UserId:      callbackQuery.From.ID,
+		Amount:      moneyTransacted.Amount(),
+		Currency:    money.SGD,
+	}
+
+	err = handler.transactionDao.Insert(ctx, transaction)
+	if err != nil {
+		log.Error().Msgf("FromCategory error: %v", err)
+		msg.Text = "Something went wrong :("
+		return
+	}
+	msg.Text = fmt.Sprintf("You spent %s on %s", moneyTransacted.Display(), category.Name)
+}
+
+func parseMoneyFromTransactionCallback(s string, currencyCode string) (*money.Money, error) {
+	floatString := strings.ReplaceAll(s, message.TransactionReplyMsg, "")
+	floatAmount, err := strconv.ParseFloat(floatString, 10)
+	if err != nil {
+		return nil, err
+	}
+	return money.NewFromFloat(floatAmount, currencyCode), nil
 }
