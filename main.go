@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"github.com/aattwwss/telegram-expense-bot/config"
 	"github.com/aattwwss/telegram-expense-bot/dao"
 	"github.com/aattwwss/telegram-expense-bot/db"
@@ -11,9 +12,24 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/rs/zerolog/log"
 	"os"
+	"strings"
 )
 
-func handleCallback(ctx context.Context, bot *tgbotapi.BotAPI, update tgbotapi.Update, commandHandler *handler.CallbackHandler) {
+func botSend(bot *tgbotapi.BotAPI, msg tgbotapi.MessageConfig) {
+	if _, err := bot.Send(msg); err != nil {
+		log.Error().Msgf("handleCallback error: %v", err)
+	}
+}
+
+func decodeCallbackData(update tgbotapi.Update) (string, string, error) {
+	dataArr := strings.Split(update.CallbackQuery.Data, "||")
+	if len(dataArr) != 2 {
+		return "", "", errors.New("decodeCallbackData error")
+	}
+	return dataArr[0], dataArr[1], nil
+}
+
+func closeInlineKeyboard(bot *tgbotapi.BotAPI, update tgbotapi.Update) {
 	editMsgConfig := tgbotapi.EditMessageReplyMarkupConfig{
 		BaseEdit: tgbotapi.BaseEdit{
 			ChatID:      update.CallbackQuery.Message.Chat.ID,
@@ -24,22 +40,33 @@ func handleCallback(ctx context.Context, bot *tgbotapi.BotAPI, update tgbotapi.U
 	if _, err := bot.Request(editMsgConfig); err != nil {
 		log.Error().Msgf("handleMessage error: %v", err)
 	}
+}
 
-	msg := tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, update.CallbackQuery.Data)
+func handleCallback(ctx context.Context, bot *tgbotapi.BotAPI, update tgbotapi.Update, callbackHandler *handler.CallbackHandler) {
+	closeInlineKeyboard(bot, update)
 
-	//And finally, send a message containing the data received.
-	if _, err := bot.Send(msg); err != nil {
-		log.Error().Msgf("handleMessage error: %v", err)
+	msg := tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, "")
+	typeName, data, err := decodeCallbackData(update)
+	if err != nil {
+		msg.Text = "Something went wrong :("
+		botSend(bot, msg)
 	}
+
+	switch typeName {
+	case "Category":
+		callbackHandler.FromCategory(ctx, &msg, update.CallbackQuery, data)
+	default:
+		log.Error().Msg("handleCallback error: unrecognised callback")
+		msg.Text = "Something went wrong :("
+	}
+
+	botSend(bot, msg)
 }
 func handleMessage(ctx context.Context, bot *tgbotapi.BotAPI, update tgbotapi.Update, commandHandler *handler.CommandHandler) {
 	log.Info().Msgf("Received: %v", update.Message.Text)
 
 	msg := tgbotapi.NewMessage(update.Message.Chat.ID, "")
-	if update.Message.IsCommand() { // ignore any non-command Messages
-		// Create a new MessageConfig. We don't have text yet,
-		// so we leave it empty.
-		// Extract the command from the Message.
+	if update.Message.IsCommand() {
 		switch update.Message.Command() {
 		case "start":
 			commandHandler.Start(ctx, &msg, update)
@@ -51,10 +78,7 @@ func handleMessage(ctx context.Context, bot *tgbotapi.BotAPI, update tgbotapi.Up
 	} else {
 		commandHandler.Transact(ctx, &msg, update)
 	}
-	// Send the message.
-	if _, err := bot.Send(msg); err != nil {
-		log.Error().Msgf("handleMessage error: %v", err)
-	}
+	botSend(bot, msg)
 }
 
 func loadEnv() error {
@@ -92,7 +116,7 @@ func main() {
 	categoryDao := dao.NewCategoryDAO(dbLoaded)
 
 	commandHandler := handler.NewCommandHandler(userDAO, transactionDAO, categoryDao)
-	callbackHandler := handler.NewCallbackHandler(userDAO, transactionDAO)
+	callbackHandler := handler.NewCallbackHandler(userDAO, transactionDAO, categoryDao)
 
 	bot, err := tgbotapi.NewBotAPI(cfg.TelegramApiToken)
 	if err != nil {

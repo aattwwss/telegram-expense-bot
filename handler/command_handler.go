@@ -98,12 +98,13 @@ func (handler CommandHandler) Transact(ctx context.Context, msg *tgbotapi.Messag
 		row := tgbotapi.NewInlineKeyboardRow()
 		for j := 0; j < categoriesInlineColNum; j++ {
 			catIndex := categoriesInlineColNum*i + j
-			log.Info().Msgf("Row: %v Col: %v Index: %v", i, j, catIndex)
+			//log.Info().Msgf("Row: %v Col: %v Index: %v", i, j, catIndex)
 			if catIndex == len(categories) {
 				break
 			}
 			category := categories[catIndex]
-			button := tgbotapi.NewInlineKeyboardButtonData(category.Name, strconv.FormatInt(category.Id, 10))
+			serializedCategory := util.CallbackDataSerialize(*category, category.Id)
+			button := tgbotapi.NewInlineKeyboardButtonData(category.Name, serializedCategory)
 			row = append(row, button)
 		}
 		categoriesKeyboards = append(categoriesKeyboards, row)

@@ -29,3 +29,18 @@ func (dao CategoryDAO) FindByTransactionTypeId(ctx context.Context, transactionT
 	}
 	return categories, nil
 }
+
+func (dao CategoryDAO) GetById(ctx context.Context, id int) (entity.Category, error) {
+	var categories []*entity.Category
+	sql := `
+			SELECT id, name, transaction_type_id 
+			FROM category 
+			WHERE id = $1
+			ORDER BY name
+			`
+	err := pgxscan.Select(ctx, dao.db, &categories, sql, id)
+	if err != nil {
+		return entity.Category{}, err
+	}
+	return *categories[0], nil
+}
