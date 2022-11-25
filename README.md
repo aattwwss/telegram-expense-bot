@@ -18,3 +18,7 @@
 - [ ] Calculate by date range
   - [ ] Return summary in text
   - [ ] Return summary in chart
+- [ ] Implement expense and income command
+- [ ] Set currency (during /start and /currency to change)
+- [ ] Export transactions
+- [ ] Set custom categories per user
