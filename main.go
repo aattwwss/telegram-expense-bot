@@ -7,6 +7,7 @@ import (
 	"github.com/aattwwss/telegram-expense-bot/dao"
 	"github.com/aattwwss/telegram-expense-bot/db"
 	"github.com/aattwwss/telegram-expense-bot/handler"
+	"github.com/aattwwss/telegram-expense-bot/message"
 	"github.com/caarlos0/env/v6"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/joho/godotenv"
@@ -48,7 +49,7 @@ func handleCallback(ctx context.Context, bot *tgbotapi.BotAPI, update tgbotapi.U
 	msg := tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, "")
 	typeName, data, err := decodeCallbackData(update)
 	if err != nil {
-		msg.Text = "Something went wrong :("
+		msg.Text = message.GenericErrReplyMsg
 		botSend(bot, msg)
 	}
 
@@ -57,7 +58,7 @@ func handleCallback(ctx context.Context, bot *tgbotapi.BotAPI, update tgbotapi.U
 		callbackHandler.FromCategory(ctx, &msg, update.CallbackQuery, data)
 	default:
 		log.Error().Msg("handleCallback error: unrecognised callback")
-		msg.Text = "Something went wrong :("
+		msg.Text = message.GenericErrReplyMsg
 	}
 
 	botSend(bot, msg)

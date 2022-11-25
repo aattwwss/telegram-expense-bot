@@ -34,18 +34,18 @@ func (handler CallbackHandler) FromCategory(ctx context.Context, msg *tgbotapi.M
 	categoryId, err := strconv.Atoi(data)
 	if err != nil {
 		log.Error().Msgf("FromCategory error: %v", err)
-		msg.Text = "Something went wrong :("
+		msg.Text = message.GenericErrReplyMsg
 		return
 	}
 	category, err := handler.categoryDao.GetById(ctx, categoryId)
 	if err != nil {
-		msg.Text = "Something went wrong :("
+		msg.Text = message.GenericErrReplyMsg
 		return
 	}
 	moneyTransacted, err := parseMoneyFromTransactionCallback(text, money.SGD)
 	if err != nil {
 		log.Error().Msgf("FromCategory error: %v", err)
-		msg.Text = "Something went wrong :("
+		msg.Text = message.GenericErrReplyMsg
 		return
 	}
 
@@ -61,7 +61,7 @@ func (handler CallbackHandler) FromCategory(ctx context.Context, msg *tgbotapi.M
 	err = handler.transactionDao.Insert(ctx, transaction)
 	if err != nil {
 		log.Error().Msgf("FromCategory error: %v", err)
-		msg.Text = "Something went wrong :("
+		msg.Text = message.GenericErrReplyMsg
 		return
 	}
 	msg.Text = fmt.Sprintf("You spent %s on %s", moneyTransacted.Display(), category.Name)

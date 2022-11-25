@@ -15,12 +15,13 @@ import (
 )
 
 const (
-	userExistsMsg          = "Welcome back! These are the summary of your transactions: \n"
-	errorFindingUserMsg    = "Sorry there is a problem fetching your information.\n"
-	errorCreatingUserMsg   = "Sorry there is a problem signing you up.\n"
-	signUpSuccessMsg       = "Congratulations! We can get you started right away!\n"
-	registerHereMsg        = "Looks like you have not registered in our system. Type /start to register!\n"
-	helpMsg                = "Type /start to register.\nType <category>, <price>, [date]\n"
+	userExistsMsg            = "Welcome back! These are the summary of your transactions: \n"
+	errorFindingUserMsg      = "Sorry there is a problem fetching your information.\n"
+	errorCreatingUserMsg     = "Sorry there is a problem signing you up.\n"
+	signUpSuccessMsg         = "Congratulations! We can get you started right away!\n"
+	helpMsg                  = "Type /start to register.\nType <category>, <price>, [date]\n"
+	cannotRecogniseAmountMsg = "I don't recognise that amount of money :(\n"
+
 	categoriesInlineColNum = 3
 )
 
@@ -87,7 +88,7 @@ func (handler CommandHandler) Help(ctx context.Context, msg *tgbotapi.MessageCon
 func (handler CommandHandler) Transact(ctx context.Context, msg *tgbotapi.MessageConfig, update tgbotapi.Update) {
 	float, err := strconv.ParseFloat(update.Message.Text, 64)
 	if err != nil {
-		msg.Text = "not correct money format :("
+		msg.Text = cannotRecogniseAmountMsg
 		return
 	}
 
@@ -101,7 +102,6 @@ func (handler CommandHandler) Transact(ctx context.Context, msg *tgbotapi.Messag
 		return
 	}
 
-	//numOfRows := (len(categories) + 1) / categoriesInlineColNum
 	numOfRows := roundUpDivision(len(categories), categoriesInlineColNum)
 	var categoriesKeyboards [][]tgbotapi.InlineKeyboardButton
 
@@ -109,7 +109,6 @@ func (handler CommandHandler) Transact(ctx context.Context, msg *tgbotapi.Messag
 		row := tgbotapi.NewInlineKeyboardRow()
 		for j := 0; j < categoriesInlineColNum; j++ {
 			catIndex := categoriesInlineColNum*i + j
-			//log.Info().Msgf("Row: %v Col: %v Index: %v", i, j, catIndex)
 			if catIndex == len(categories) {
 				break
 			}
