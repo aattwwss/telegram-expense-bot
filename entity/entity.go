@@ -29,7 +29,8 @@ type Category struct {
 }
 
 type MonthlySummary struct {
-	Date                 string // using string to represent the date aspect only
+	Month                time.Month
+	Year                 int
 	Amount               int64
 	TransactionTypeLabel string
 	Multiplier           int
