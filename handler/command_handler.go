@@ -2,6 +2,7 @@ package handler
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"github.com/Rhymond/go-money"
 	"github.com/aattwwss/telegram-expense-bot/dao"
@@ -12,6 +13,7 @@ import (
 	"github.com/rs/zerolog/log"
 	"math"
 	"strconv"
+	"time"
 )
 
 const (
@@ -29,13 +31,15 @@ type CommandHandler struct {
 	userDao        dao.UserDAO
 	transactionDao dao.TransactionDAO
 	categoryDao    dao.CategoryDAO
+	statDao        dao.StatDAO
 }
 
-func NewCommandHandler(userDao dao.UserDAO, transactionDao dao.TransactionDAO, categoryDao dao.CategoryDAO) CommandHandler {
+func NewCommandHandler(userDao dao.UserDAO, transactionDao dao.TransactionDAO, categoryDao dao.CategoryDAO, statDao dao.StatDAO) CommandHandler {
 	return CommandHandler{
 		userDao:        userDao,
 		transactionDao: transactionDao,
 		categoryDao:    categoryDao,
+		statDao:        statDao,
 	}
 }
 
@@ -128,4 +132,28 @@ func roundUpDivision(dividend int, divisor int) int {
 	quotient := float64(dividend) / float64(divisor)
 	quotientCeiling := math.Ceil(quotient)
 	return int(quotientCeiling)
+}
+
+func (handler CommandHandler) Stat(ctx context.Context, msg *tgbotapi.MessageConfig, update tgbotapi.Update) {
+	userId := update.SentFrom().ID
+	loc, err := time.LoadLocation("Asia/Singapore")
+	if err != nil || loc == nil {
+		msg.Text = message.GenericErrReplyMsg
+		return
+	}
+	param := dao.GetMonthlySearchParam{
+		Location:           *loc,
+		PrevMonthIntervals: 3,
+		UserId:             userId,
+	}
+	summaries, err := handler.statDao.GetMonthly(ctx, param)
+	if err != nil {
+		log.Error().Msgf("%v", err)
+		msg.Text = message.GenericErrReplyMsg
+		return
+	}
+	s, _ := json.Marshal(summaries)
+	log.Info().Msg(string(s))
+	msg.Text = string(s)
+	return
 }

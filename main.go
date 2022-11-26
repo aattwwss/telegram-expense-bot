@@ -73,6 +73,8 @@ func handleMessage(ctx context.Context, bot *tgbotapi.BotAPI, update tgbotapi.Up
 			commandHandler.Start(ctx, &msg, update)
 		case "help":
 			commandHandler.Help(ctx, &msg, update)
+		case "stat":
+			commandHandler.Stat(ctx, &msg, update)
 		default:
 			commandHandler.Help(ctx, &msg, update)
 		}
@@ -115,8 +117,9 @@ func main() {
 	userDAO := dao.NewUserDao(dbLoaded)
 	transactionDAO := dao.NewTransactionDAO(dbLoaded)
 	categoryDao := dao.NewCategoryDAO(dbLoaded)
+	statDao := dao.NewStatDAO(dbLoaded)
 
-	commandHandler := handler.NewCommandHandler(userDAO, transactionDAO, categoryDao)
+	commandHandler := handler.NewCommandHandler(userDAO, transactionDAO, categoryDao, statDao)
 	callbackHandler := handler.NewCallbackHandler(userDAO, transactionDAO, categoryDao)
 
 	bot, err := tgbotapi.NewBotAPI(cfg.TelegramApiToken)
