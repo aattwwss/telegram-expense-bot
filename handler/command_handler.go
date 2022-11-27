@@ -2,7 +2,6 @@ package handler
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"github.com/Rhymond/go-money"
 	"github.com/aattwwss/telegram-expense-bot/dao"
@@ -152,8 +151,13 @@ func (handler CommandHandler) Stat(ctx context.Context, msg *tgbotapi.MessageCon
 		msg.Text = message.GenericErrReplyMsg
 		return
 	}
-	s, _ := json.Marshal(summaries)
-	log.Info().Msg(string(s))
-	msg.Text = string(s)
+
+	for _, summary := range summaries {
+		moneyAmount := money.New(summary.Amount, money.SGD)
+		month := summary.Month.String()
+		mon := month[:3]
+		msg.Text += fmt.Sprintf("%v %v\n%v %v\n", mon, summary.Year, summary.TransactionTypeLabel, moneyAmount.Display())
+	}
+
 	return
 }
