@@ -12,6 +12,7 @@ import (
 	"github.com/rs/zerolog/log"
 	"math"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -25,7 +26,7 @@ const (
 
 	transactionHeaderHTMLMsg  = "<b>Summary\n</b>"
 	monthYearHeaderHTMLMsg    = "<code>\n%v %v\n</code>"
-	transactionSummaryHTMLMsg = "<code>%v: %v\n</code>"
+	transactionSummaryHTMLMsg = "<code>%v:%s %v\n</code>"
 	transactionTotalHTMLMsg   = "<code>🟡 Total: %v\n</code>"
 
 	categoriesInlineColNum = 3
@@ -156,7 +157,7 @@ func (handler CommandHandler) Stat(ctx context.Context, msg *tgbotapi.MessageCon
 		msg.Text = message.GenericErrReplyMsg
 		return
 	}
-
+	formatTransactionLabelInSummaries(summaries)
 	msg.Text = transactionHeaderHTMLMsg
 
 	currMonth := ""
@@ -170,15 +171,30 @@ func (handler CommandHandler) Stat(ctx context.Context, msg *tgbotapi.MessageCon
 			totalAmountForTheMonth = 0
 		}
 
-		totalAmountForTheMonth += summary.Amount
+		totalAmountForTheMonth += summary.Amount * summary.Multiplier
 		moneyAmount := money.New(summary.Amount, money.SGD)
-		msg.Text += fmt.Sprintf(transactionSummaryHTMLMsg, summary.TransactionTypeLabel, moneyAmount.Display())
+		msg.Text += fmt.Sprintf(transactionSummaryHTMLMsg, summary.TransactionTypeLabel, strings.Repeat(" ", summary.GetSpacesToPad()), moneyAmount.Display())
 
 		if i == len(summaries)-1 || summaries[i+1].Month.String()[:3] != currMonth {
 			msg.Text += fmt.Sprintf(transactionTotalHTMLMsg, money.New(totalAmountForTheMonth, money.SGD).Display())
 		}
-
 	}
+
 	msg.ParseMode = tgbotapi.ModeHTML
 	return
+}
+
+func formatTransactionLabelInSummaries(summaries []*entity.MonthlySummary) {
+	longestLabel := 0
+	for _, summary := range summaries {
+		lengthOfLabel := len(summary.TransactionTypeLabel)
+		if lengthOfLabel > longestLabel {
+			longestLabel = lengthOfLabel
+		}
+	}
+
+	for i := range summaries {
+		label := summaries[i].TransactionTypeLabel
+		summaries[i].SetSpacesToPad(longestLabel - len(label))
+	}
 }

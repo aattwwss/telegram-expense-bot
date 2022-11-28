@@ -33,5 +33,15 @@ type MonthlySummary struct {
 	Year                 int
 	Amount               int64
 	TransactionTypeLabel string
-	Multiplier           int
+	Multiplier           int64
+
+	spacesToPad int
+}
+
+func (s *MonthlySummary) SetSpacesToPad(n int) {
+	s.spacesToPad = n
+}
+
+func (s *MonthlySummary) GetSpacesToPad() int {
+	return s.spacesToPad
 }
