@@ -26,6 +26,7 @@ const (
 	transactionHeaderHTMLMsg  = "<b>Summary\n</b>"
 	monthYearHeaderHTMLMsg    = "<code>\n%v %v\n</code>"
 	transactionSummaryHTMLMsg = "<code>%v: %v\n</code>"
+	transactionTotalHTMLMsg   = "<code>🟡 Total: %v\n</code>"
 
 	categoriesInlineColNum = 3
 )
@@ -159,15 +160,24 @@ func (handler CommandHandler) Stat(ctx context.Context, msg *tgbotapi.MessageCon
 	msg.Text = transactionHeaderHTMLMsg
 
 	currMonth := ""
+	var totalAmountForTheMonth int64
 
-	for _, summary := range summaries {
+	for i, summary := range summaries {
 		month := summary.Month.String()[:3]
 		if currMonth != month {
 			msg.Text += fmt.Sprintf(monthYearHeaderHTMLMsg, month, summary.Year)
 			currMonth = month
+			totalAmountForTheMonth = 0
 		}
+
+		totalAmountForTheMonth += summary.Amount
 		moneyAmount := money.New(summary.Amount, money.SGD)
 		msg.Text += fmt.Sprintf(transactionSummaryHTMLMsg, summary.TransactionTypeLabel, moneyAmount.Display())
+
+		if i == len(summaries)-1 || summaries[i+1].Month.String()[:3] != currMonth {
+			msg.Text += fmt.Sprintf(transactionTotalHTMLMsg, money.New(totalAmountForTheMonth, money.SGD).Display())
+		}
+
 	}
 	msg.ParseMode = tgbotapi.ModeHTML
 	return
