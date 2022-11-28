@@ -23,6 +23,10 @@ const (
 	helpMsg                  = "Type /start to register.\nType <category>, <price>, [date]\n"
 	cannotRecogniseAmountMsg = "I don't recognise that amount of money :(\n"
 
+	transactionHeaderHTMLMsg  = "<b>Summary\n</b>"
+	monthYearHeaderHTMLMsg    = "<code>\n%v %v\n</code>"
+	transactionSummaryHTMLMsg = "<code>%v: %v\n</code>"
+
 	categoriesInlineColNum = 3
 )
 
@@ -152,12 +156,19 @@ func (handler CommandHandler) Stat(ctx context.Context, msg *tgbotapi.MessageCon
 		return
 	}
 
-	for _, summary := range summaries {
-		moneyAmount := money.New(summary.Amount, money.SGD)
-		month := summary.Month.String()
-		mon := month[:3]
-		msg.Text += fmt.Sprintf("%v %v\n%v %v\n", mon, summary.Year, summary.TransactionTypeLabel, moneyAmount.Display())
-	}
+	msg.Text = transactionHeaderHTMLMsg
 
+	currMonth := ""
+
+	for _, summary := range summaries {
+		month := summary.Month.String()[:3]
+		if currMonth != month {
+			msg.Text += fmt.Sprintf(monthYearHeaderHTMLMsg, month, summary.Year)
+			currMonth = month
+		}
+		moneyAmount := money.New(summary.Amount, money.SGD)
+		msg.Text += fmt.Sprintf(transactionSummaryHTMLMsg, summary.TransactionTypeLabel, moneyAmount.Display())
+	}
+	msg.ParseMode = tgbotapi.ModeHTML
 	return
 }

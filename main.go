@@ -103,7 +103,6 @@ func loadEnv() error {
 
 func main() {
 	ctx := context.Background()
-	//zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
 	err := loadEnv()
 	if err != nil {
 		log.Fatal().Msg("Error loading .env files")
@@ -123,6 +122,7 @@ func main() {
 	callbackHandler := handler.NewCallbackHandler(userDAO, transactionDAO, categoryDao)
 
 	bot, err := tgbotapi.NewBotAPI(cfg.TelegramApiToken)
+
 	if err != nil {
 		log.Fatal().Err(err)
 	}
