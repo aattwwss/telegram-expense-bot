@@ -24,6 +24,13 @@ This bot does not store any personal information other than your telegram user i
 - [ ] Set currency (during /start and /currency to change)
 - [ ] Export transactions
 - [ ] Set custom categories per user
+
+# Dev / Infra 
 - [ ] Add CICD from github actions to deploy to remote server 
   - [ ] ~~Build image -> deploy to docker hub -> trigger deployment in remote server~~
   - [ ] Pull from remote and build and run :(
+
+# Misc
+- [ ] Consolidate SQL to the latest schema
+- [ ] Prepare docker compose for self hosted guide
+- [ ] Prepare self hosted guide
