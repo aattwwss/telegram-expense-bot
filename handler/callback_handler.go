@@ -5,8 +5,9 @@ import (
 	"fmt"
 	"github.com/Rhymond/go-money"
 	"github.com/aattwwss/telegram-expense-bot/dao"
-	"github.com/aattwwss/telegram-expense-bot/entity"
+	"github.com/aattwwss/telegram-expense-bot/domain"
 	"github.com/aattwwss/telegram-expense-bot/message"
+	"github.com/aattwwss/telegram-expense-bot/repo"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/rs/zerolog/log"
 	"strconv"
@@ -15,16 +16,16 @@ import (
 )
 
 type CallbackHandler struct {
-	userDao        dao.UserDAO
-	transactionDao dao.TransactionDAO
-	categoryDao    dao.CategoryDAO
+	userDao         dao.UserDAO
+	transactionRepo repo.TransactionRepo
+	categoryDao     dao.CategoryDAO
 }
 
-func NewCallbackHandler(userDao dao.UserDAO, transactionDao dao.TransactionDAO, categoryDao dao.CategoryDAO) CallbackHandler {
+func NewCallbackHandler(userDao dao.UserDAO, transactionRepo repo.TransactionRepo, categoryDao dao.CategoryDAO) CallbackHandler {
 	return CallbackHandler{
-		userDao:        userDao,
-		transactionDao: transactionDao,
-		categoryDao:    categoryDao,
+		userDao:         userDao,
+		transactionRepo: transactionRepo,
+		categoryDao:     categoryDao,
 	}
 }
 
@@ -61,16 +62,15 @@ func (handler CallbackHandler) FromCategory(ctx context.Context, msg *tgbotapi.M
 		return
 	}
 
-	transaction := entity.Transaction{
+	transaction := domain.Transaction{
 		Datetime:    time.Now(),
 		CategoryId:  categoryId,
 		Description: "",
 		UserId:      callbackQuery.From.ID,
-		Amount:      moneyTransacted.Amount(),
-		Currency:    money.SGD,
+		Amount:      moneyTransacted,
 	}
 
-	err = handler.transactionDao.Insert(ctx, transaction)
+	err = handler.transactionRepo.Add(ctx, transaction)
 	if err != nil {
 		log.Error().Msgf("FromCategory error: %v", err)
 		msg.Text = message.GenericErrReplyMsg

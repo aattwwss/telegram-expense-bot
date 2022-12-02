@@ -2,26 +2,34 @@ package repo
 
 import (
 	"context"
+	"github.com/aattwwss/telegram-expense-bot/dao"
+	"github.com/aattwwss/telegram-expense-bot/domain"
 	"github.com/aattwwss/telegram-expense-bot/entity"
-	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-type TransactionDAO struct {
-	db *pgxpool.Pool
+type TransactionRepo struct {
+	transactionDao dao.TransactionDAO
 }
 
-func NewTransactionDAO(db *pgxpool.Pool) TransactionDAO {
-	return TransactionDAO{db: db}
+func NewTransactionRepo(transactionDao dao.TransactionDAO) TransactionRepo {
+	return TransactionRepo{transactionDao: transactionDao}
 }
 
-func (dao TransactionDAO) Insert(ctx context.Context, transaction entity.Transaction) error {
-	sql := `
-		INSERT INTO transaction ( datetime, category_id, description, user_id, amount, currency)
-		VALUES ($1, $2, $3, $4, $5, $6)
-		`
-	_, err := dao.db.Exec(ctx, sql, transaction.Datetime, transaction.CategoryId, transaction.Description, transaction.UserId, transaction.Amount, transaction.Currency)
+func (repo TransactionRepo) Add(ctx context.Context, t domain.Transaction) error {
+
+	err := repo.transactionDao.Insert(ctx, entity.Transaction{
+		Id:          t.Id,
+		Datetime:    t.Datetime,
+		CategoryId:  t.CategoryId,
+		Description: t.Description,
+		UserId:      t.UserId,
+		Amount:      t.Amount.Amount(),
+		Currency:    t.Amount.Currency().Code,
+	})
+
 	if err != nil {
 		return err
 	}
+
 	return nil
 }

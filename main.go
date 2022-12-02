@@ -119,11 +119,12 @@ func main() {
 	categoryDao := dao.NewCategoryDAO(dbLoaded)
 	statDao := dao.NewStatDAO(dbLoaded)
 
+	transactionRepo := repo.NewTransactionRepo(transactionDAO)
 	userRepo := repo.NewUserRepo(userDAO)
 	statRepo := repo.NewStatRepo(statDao)
 
 	commandHandler := handler.NewCommandHandler(userRepo, transactionDAO, categoryDao, statRepo)
-	callbackHandler := handler.NewCallbackHandler(userDAO, transactionDAO, categoryDao)
+	callbackHandler := handler.NewCallbackHandler(userDAO, transactionRepo, categoryDao)
 
 	bot, err := tgbotapi.NewBotAPI(cfg.TelegramApiToken)
 	if err != nil {
