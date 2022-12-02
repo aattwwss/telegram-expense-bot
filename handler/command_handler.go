@@ -30,10 +30,9 @@ const (
 )
 
 type CommandHandler struct {
-	//userDao        dao.UserDAO
 	transactionDao dao.TransactionDAO
 	categoryDao    dao.CategoryDAO
-	//statDao        dao.StatDAO
+
 	statRepo repo.StatRepo
 	userRepo repo.UserRepo
 }
