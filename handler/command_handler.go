@@ -24,10 +24,7 @@ const (
 	helpMsg                  = "Type /start to register.\nType <category>, <price>, [date]\n"
 	cannotRecogniseAmountMsg = "I don't recognise that amount of money :(\n"
 
-	transactionHeaderHTMLMsg  = "<b>Summary\n</b>"
-	monthYearHeaderHTMLMsg    = "<code>\n%v %v\n</code>"
-	transactionSummaryHTMLMsg = "<code>%v:%s %v\n</code>"
-	transactionTotalHTMLMsg   = "<code>🟡 Total: %v\n</code>"
+	transactionHeaderHTMLMsg = "<b>Summary\n</b>"
 
 	categoriesInlineColNum = 3
 )
@@ -155,7 +152,7 @@ func (handler CommandHandler) Stat(ctx context.Context, msg *tgbotapi.MessageCon
 		msg.Text = message.GenericErrReplyMsg
 		return
 	}
-	//formatTransactionLabelInSummaries(summaries)
+
 	msg.Text = transactionHeaderHTMLMsg
 	msg.Text += summaries.GenerateReportText()
 
