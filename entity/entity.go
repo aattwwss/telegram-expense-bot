@@ -5,11 +5,10 @@ import (
 )
 
 type User struct {
-	Id        int64
-	IsBot     bool
-	FirstName string
-	LastName  *string
-	Username  *string
+	Id       int64
+	Locale   string
+	Currency string
+	Timezone string
 }
 
 type Transaction struct {

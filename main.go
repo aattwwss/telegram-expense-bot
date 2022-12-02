@@ -8,6 +8,7 @@ import (
 	"github.com/aattwwss/telegram-expense-bot/db"
 	"github.com/aattwwss/telegram-expense-bot/handler"
 	"github.com/aattwwss/telegram-expense-bot/message"
+	"github.com/aattwwss/telegram-expense-bot/repo"
 	"github.com/caarlos0/env/v6"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/joho/godotenv"
@@ -105,7 +106,7 @@ func main() {
 	ctx := context.Background()
 	err := loadEnv()
 	if err != nil {
-		log.Fatal().Msg("Error loading .env files")
+		log.Fatal().Err(err)
 	}
 	cfg := config.EnvConfig{}
 	if err := env.Parse(&cfg); err != nil {
@@ -118,11 +119,12 @@ func main() {
 	categoryDao := dao.NewCategoryDAO(dbLoaded)
 	statDao := dao.NewStatDAO(dbLoaded)
 
-	commandHandler := handler.NewCommandHandler(userDAO, transactionDAO, categoryDao, statDao)
+	userRepo := repo.NewUserRepo(userDAO)
+
+	commandHandler := handler.NewCommandHandler(userRepo, transactionDAO, categoryDao, statDao)
 	callbackHandler := handler.NewCallbackHandler(userDAO, transactionDAO, categoryDao)
 
 	bot, err := tgbotapi.NewBotAPI(cfg.TelegramApiToken)
-
 	if err != nil {
 		log.Fatal().Err(err)
 	}

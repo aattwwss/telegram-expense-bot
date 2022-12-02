@@ -28,6 +28,18 @@ func NewCallbackHandler(userDao dao.UserDAO, transactionDao dao.TransactionDAO, 
 	}
 }
 
+//func (handler CallbackHandler) FromTransactionType(ctx context.Context, msg *tgbotapi.MessageConfig, callbackQuery *tgbotapi.CallbackQuery, data string) {
+//	text := callbackQuery.Message.Text
+//
+//	transactionTypeId, err := strconv.Atoi(data)
+//	if err != nil {
+//		log.Error().Msgf("FromTransactionType error: %v", err)
+//		msg.Text = message.GenericErrReplyMsg
+//		return
+//	}
+//
+//}
+
 func (handler CallbackHandler) FromCategory(ctx context.Context, msg *tgbotapi.MessageConfig, callbackQuery *tgbotapi.CallbackQuery, data string) {
 	text := callbackQuery.Message.Text
 

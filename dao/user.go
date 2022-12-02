@@ -17,7 +17,7 @@ func NewUserDao(db *pgxpool.Pool) UserDAO {
 
 func (dao UserDAO) FindUserById(ctx context.Context, id int64) (*entity.User, error) {
 	var users []*entity.User
-	err := pgxscan.Select(ctx, dao.db, &users, `SELECT id, first_name, last_name, username FROM telegram_user WHERE id = $1`, id)
+	err := pgxscan.Select(ctx, dao.db, &users, `SELECT id, locale, currency, timezone FROM app_user WHERE id = $1`, id)
 	if err != nil {
 		return nil, err
 	}
@@ -29,10 +29,10 @@ func (dao UserDAO) FindUserById(ctx context.Context, id int64) (*entity.User, er
 
 func (dao UserDAO) Insert(ctx context.Context, user entity.User) error {
 	sql := `
-		INSERT INTO telegram_user (id, is_bot,first_name, last_name, username)
-		VALUES ($1, $2, $3, $4, $5)
+		INSERT INTO app_user (id, locale, currency, timezone)
+		VALUES ($1, $2, $3, $4)
 		`
-	_, err := dao.db.Exec(ctx, sql, user.Id, user.IsBot, user.FirstName, user.LastName, user.Username)
+	_, err := dao.db.Exec(ctx, sql, user.Id, user.Locale, user.Currency, user.Timezone)
 	if err != nil {
 		return err
 	}

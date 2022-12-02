@@ -5,8 +5,10 @@ import (
 	"fmt"
 	"github.com/Rhymond/go-money"
 	"github.com/aattwwss/telegram-expense-bot/dao"
+	"github.com/aattwwss/telegram-expense-bot/domain"
 	"github.com/aattwwss/telegram-expense-bot/entity"
 	"github.com/aattwwss/telegram-expense-bot/message"
+	"github.com/aattwwss/telegram-expense-bot/repo"
 	"github.com/aattwwss/telegram-expense-bot/util"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/rs/zerolog/log"
@@ -33,15 +35,16 @@ const (
 )
 
 type CommandHandler struct {
-	userDao        dao.UserDAO
+	//userDao        dao.UserDAO
 	transactionDao dao.TransactionDAO
 	categoryDao    dao.CategoryDAO
 	statDao        dao.StatDAO
+	userRepo       repo.UserRepo
 }
 
-func NewCommandHandler(userDao dao.UserDAO, transactionDao dao.TransactionDAO, categoryDao dao.CategoryDAO, statDao dao.StatDAO) CommandHandler {
+func NewCommandHandler(userRepo repo.UserRepo, transactionDao dao.TransactionDAO, categoryDao dao.CategoryDAO, statDao dao.StatDAO) CommandHandler {
 	return CommandHandler{
-		userDao:        userDao,
+		userRepo:       userRepo,
 		transactionDao: transactionDao,
 		categoryDao:    categoryDao,
 		statDao:        statDao,
@@ -53,35 +56,31 @@ func (handler CommandHandler) Start(ctx context.Context, msg *tgbotapi.MessageCo
 
 	teleUser := update.SentFrom()
 
-	dbUser, err := handler.userDao.FindUserById(ctx, teleUser.ID)
+	dbUser, err := handler.userRepo.FindUserById(ctx, teleUser.ID)
 	if err != nil {
+		log.Error().Msgf("error finding user: %v", err)
 		msg.Text += errorFindingUserMsg
 		return
 	}
 
 	if dbUser != nil {
+		log.Info().Msgf("User already exists. id: %v", dbUser.Id)
 		msg.Text += userExistsMsg
 		return
 	}
 
-	//entityUser := entity.User{
-	//	Id:        teleUser.ID,
-	//	IsBot:     teleUser.IsBot,
-	//	FirstName: teleUser.FirstName,
-	//	LastName:  util.Ptr(teleUser.LastName),
-	//	Username:  util.Ptr(teleUser.UserName),
-	//}
+	loc, _ := time.LoadLocation("Asia/Singapore")
 
-	entityUser := entity.User{
-		Id:        teleUser.ID,
-		IsBot:     teleUser.IsBot,
-		FirstName: "",
-		LastName:  util.Ptr(""),
-		Username:  util.Ptr(""),
+	user := domain.User{
+		Id:       teleUser.ID,
+		Locale:   "en",
+		Currency: money.GetCurrency("SGD"),
+		Location: loc,
 	}
 
-	err = handler.userDao.Insert(ctx, entityUser)
+	err = handler.userRepo.Add	a(ctx, user)
 	if err != nil {
+		log.Error().Msgf("error adding user: %v", err)
 		msg.Text += errorCreatingUserMsg
 		return
 	}
