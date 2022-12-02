@@ -2,45 +2,44 @@ package repo
 
 import (
 	"context"
-	"github.com/aattwwss/telegram-expense-bot/entity"
-	"github.com/georgysavva/scany/v2/pgxscan"
-	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/aattwwss/telegram-expense-bot/dao"
+	"github.com/aattwwss/telegram-expense-bot/domain"
 )
 
-type CategoryDAO struct {
-	db *pgxpool.Pool
+type CategoryRepo struct {
+	categoryDao dao.CategoryDAO
 }
 
-func NewCategoryDAO(db *pgxpool.Pool) CategoryDAO {
-	return CategoryDAO{db: db}
+func NewCategoryRepo(categoryDao dao.CategoryDAO) CategoryRepo {
+	return CategoryRepo{categoryDao: categoryDao}
 }
 
-func (dao CategoryDAO) FindByTransactionTypeId(ctx context.Context, transactionTypeId int64) ([]*entity.Category, error) {
-	var categories []*entity.Category
-	sql := `
-			SELECT id, name, transaction_type_id 
-			FROM category 
-			WHERE transaction_type_id = $1
-			ORDER BY name
-			`
-	err := pgxscan.Select(ctx, dao.db, &categories, sql, transactionTypeId)
+func (repo CategoryRepo) FindByTransactionTypeId(ctx context.Context, transactionTypeId int64) ([]domain.Category, error) {
+	var categories []domain.Category
+	entities, err := repo.categoryDao.FindByTransactionTypeId(ctx, transactionTypeId)
 	if err != nil {
 		return nil, err
+	}
+	for _, c := range entities {
+		category := domain.Category{
+			Id:                c.Id,
+			Name:              c.Name,
+			TransactionTypeId: c.TransactionTypeId,
+		}
+		categories = append(categories, category)
 	}
 	return categories, nil
 }
 
-func (dao CategoryDAO) GetById(ctx context.Context, id int) (entity.Category, error) {
-	var categories []*entity.Category
-	sql := `
-			SELECT id, name, transaction_type_id 
-			FROM category 
-			WHERE id = $1
-			ORDER BY name
-			`
-	err := pgxscan.Select(ctx, dao.db, &categories, sql, id)
+func (repo CategoryRepo) GetById(ctx context.Context, id int) (domain.Category, error) {
+	c, err := repo.categoryDao.GetById(ctx, id)
 	if err != nil {
-		return entity.Category{}, err
+		return domain.Category{}, err
 	}
-	return *categories[0], nil
+	category := domain.Category{
+		Id:                c.Id,
+		Name:              c.Name,
+		TransactionTypeId: c.TransactionTypeId,
+	}
+	return category, nil
 }

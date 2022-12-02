@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"github.com/Rhymond/go-money"
-	"github.com/aattwwss/telegram-expense-bot/dao"
 	"github.com/aattwwss/telegram-expense-bot/domain"
 	"github.com/aattwwss/telegram-expense-bot/message"
 	"github.com/aattwwss/telegram-expense-bot/repo"
@@ -31,17 +30,16 @@ const (
 
 type CommandHandler struct {
 	transactionRepo repo.TransactionRepo
-	categoryDao     dao.CategoryDAO
-
-	statRepo repo.StatRepo
-	userRepo repo.UserRepo
+	categoryRepo    repo.CategoryRepo
+	statRepo        repo.StatRepo
+	userRepo        repo.UserRepo
 }
 
-func NewCommandHandler(userRepo repo.UserRepo, transactionRepo repo.TransactionRepo, categoryDao dao.CategoryDAO, statRepo repo.StatRepo) CommandHandler {
+func NewCommandHandler(userRepo repo.UserRepo, transactionRepo repo.TransactionRepo, categoryRepo repo.CategoryRepo, statRepo repo.StatRepo) CommandHandler {
 	return CommandHandler{
 		userRepo:        userRepo,
 		transactionRepo: transactionRepo,
-		categoryDao:     categoryDao,
+		categoryRepo:    categoryRepo,
 		statRepo:        statRepo,
 	}
 }
@@ -98,7 +96,7 @@ func (handler CommandHandler) Transact(ctx context.Context, msg *tgbotapi.Messag
 	amount := money.NewFromFloat(float, money.SGD)
 	msg.Text = fmt.Sprintf(message.TransactionReplyMsg+"%v", amount.AsMajorUnits())
 
-	categories, err := handler.categoryDao.FindByTransactionTypeId(ctx, 1)
+	categories, err := handler.categoryRepo.FindByTransactionTypeId(ctx, 1)
 	if err != nil {
 		log.Error().Err(err)
 		msg.Text = "Sorry we cannot handle your transaction right now :("
@@ -116,7 +114,7 @@ func (handler CommandHandler) Transact(ctx context.Context, msg *tgbotapi.Messag
 				break
 			}
 			category := categories[catIndex]
-			serializedCategory := util.CallbackDataSerialize(*category, category.Id)
+			serializedCategory := util.CallbackDataSerialize(category, category.Id)
 			button := tgbotapi.NewInlineKeyboardButtonData(category.Name, serializedCategory)
 			row = append(row, button)
 		}

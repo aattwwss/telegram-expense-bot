@@ -122,8 +122,9 @@ func main() {
 	transactionRepo := repo.NewTransactionRepo(transactionDAO)
 	userRepo := repo.NewUserRepo(userDAO)
 	statRepo := repo.NewStatRepo(statDao)
+	categoryRepo := repo.NewCategoryRepo(categoryDao)
 
-	commandHandler := handler.NewCommandHandler(userRepo, transactionRepo, categoryDao, statRepo)
+	commandHandler := handler.NewCommandHandler(userRepo, transactionRepo, categoryRepo, statRepo)
 	callbackHandler := handler.NewCallbackHandler(userRepo, transactionRepo, categoryDao)
 
 	bot, err := tgbotapi.NewBotAPI(cfg.TelegramApiToken)
@@ -140,7 +141,7 @@ func main() {
 
 	updates := bot.GetUpdatesChan(u)
 
-	for i := 0; i < 2; i++ {
+	for i := 0; i < 8; i++ {
 		go func(bot *tgbotapi.BotAPI, update <-chan tgbotapi.Update) {
 			for update := range updates {
 				if update.Message != nil {
