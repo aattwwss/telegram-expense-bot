@@ -78,7 +78,7 @@ func (handler CommandHandler) Start(ctx context.Context, msg *tgbotapi.MessageCo
 		Location: loc,
 	}
 
-	err = handler.userRepo.Add	a(ctx, user)
+	err = handler.userRepo.Add(ctx, user)
 	if err != nil {
 		log.Error().Msgf("error adding user: %v", err)
 		msg.Text += errorCreatingUserMsg
