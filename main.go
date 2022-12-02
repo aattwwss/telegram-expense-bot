@@ -76,7 +76,7 @@ func handleMessage(ctx context.Context, bot *tgbotapi.BotAPI, update tgbotapi.Up
 			commandHandler.Start(ctx, &msg, update)
 		case "help":
 			commandHandler.Help(ctx, &msg, update)
-		case "stat":
+		case "stats":
 			commandHandler.Stat(ctx, &msg, update)
 		default:
 			commandHandler.Help(ctx, &msg, update)
