@@ -123,8 +123,8 @@ func main() {
 	userRepo := repo.NewUserRepo(userDAO)
 	statRepo := repo.NewStatRepo(statDao)
 
-	commandHandler := handler.NewCommandHandler(userRepo, transactionDAO, categoryDao, statRepo)
-	callbackHandler := handler.NewCallbackHandler(userDAO, transactionRepo, categoryDao)
+	commandHandler := handler.NewCommandHandler(userRepo, transactionRepo, categoryDao, statRepo)
+	callbackHandler := handler.NewCallbackHandler(userRepo, transactionRepo, categoryDao)
 
 	bot, err := tgbotapi.NewBotAPI(cfg.TelegramApiToken)
 	if err != nil {

@@ -16,14 +16,14 @@ import (
 )
 
 type CallbackHandler struct {
-	userDao         dao.UserDAO
+	userRepo        repo.UserRepo
 	transactionRepo repo.TransactionRepo
 	categoryDao     dao.CategoryDAO
 }
 
-func NewCallbackHandler(userDao dao.UserDAO, transactionRepo repo.TransactionRepo, categoryDao dao.CategoryDAO) CallbackHandler {
+func NewCallbackHandler(userRepo repo.UserRepo, transactionRepo repo.TransactionRepo, categoryDao dao.CategoryDAO) CallbackHandler {
 	return CallbackHandler{
-		userDao:         userDao,
+		userRepo:        userRepo,
 		transactionRepo: transactionRepo,
 		categoryDao:     categoryDao,
 	}

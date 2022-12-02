@@ -30,19 +30,19 @@ const (
 )
 
 type CommandHandler struct {
-	transactionDao dao.TransactionDAO
-	categoryDao    dao.CategoryDAO
+	transactionRepo repo.TransactionRepo
+	categoryDao     dao.CategoryDAO
 
 	statRepo repo.StatRepo
 	userRepo repo.UserRepo
 }
 
-func NewCommandHandler(userRepo repo.UserRepo, transactionDao dao.TransactionDAO, categoryDao dao.CategoryDAO, statRepo repo.StatRepo) CommandHandler {
+func NewCommandHandler(userRepo repo.UserRepo, transactionRepo repo.TransactionRepo, categoryDao dao.CategoryDAO, statRepo repo.StatRepo) CommandHandler {
 	return CommandHandler{
-		userRepo:       userRepo,
-		transactionDao: transactionDao,
-		categoryDao:    categoryDao,
-		statRepo:       statRepo,
+		userRepo:        userRepo,
+		transactionRepo: transactionRepo,
+		categoryDao:     categoryDao,
+		statRepo:        statRepo,
 	}
 }
 
