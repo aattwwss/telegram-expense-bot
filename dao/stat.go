@@ -13,18 +13,13 @@ type StatDAO struct {
 	db *pgxpool.Pool
 }
 
-type GetMonthlySearchParam struct {
-	Location           time.Location
-	PrevMonthIntervals int
-	UserId             int64
-}
-
 func NewStatDAO(db *pgxpool.Pool) StatDAO {
 	return StatDAO{db: db}
 }
 
-func (dao StatDAO) GetMonthly(ctx context.Context, param GetMonthlySearchParam) ([]*entity.MonthlySummary, error) {
+func (dao StatDAO) GetMonthly(ctx context.Context, location time.Location, prevMonths int, userId int64) ([]*entity.MonthlySummary, error) {
 	var summaries []*entity.MonthlySummary
+
 	sql := `
 			select date_part('month', datetime) as month,
 				   date_part('year', datetime)  as year,
@@ -44,8 +39,8 @@ func (dao StatDAO) GetMonthly(ctx context.Context, param GetMonthlySearchParam) 
 				  ORDER BY date_trunc('month', datetime AT time zone '%[1]s') ASC) as a;
 		`
 
-	sql = fmt.Sprintf(sql, param.Location.String())
-	err := pgxscan.Select(ctx, dao.db, &summaries, sql, param.PrevMonthIntervals, param.UserId)
+	sql = fmt.Sprintf(sql, location.String())
+	err := pgxscan.Select(ctx, dao.db, &summaries, sql, prevMonths, userId)
 	if err != nil {
 		return nil, err
 	}

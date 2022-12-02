@@ -6,7 +6,6 @@ import (
 	"github.com/Rhymond/go-money"
 	"github.com/aattwwss/telegram-expense-bot/dao"
 	"github.com/aattwwss/telegram-expense-bot/domain"
-	"github.com/aattwwss/telegram-expense-bot/entity"
 	"github.com/aattwwss/telegram-expense-bot/message"
 	"github.com/aattwwss/telegram-expense-bot/repo"
 	"github.com/aattwwss/telegram-expense-bot/util"
@@ -14,7 +13,6 @@ import (
 	"github.com/rs/zerolog/log"
 	"math"
 	"strconv"
-	"strings"
 	"time"
 )
 
@@ -38,16 +36,17 @@ type CommandHandler struct {
 	//userDao        dao.UserDAO
 	transactionDao dao.TransactionDAO
 	categoryDao    dao.CategoryDAO
-	statDao        dao.StatDAO
-	userRepo       repo.UserRepo
+	//statDao        dao.StatDAO
+	statRepo repo.StatRepo
+	userRepo repo.UserRepo
 }
 
-func NewCommandHandler(userRepo repo.UserRepo, transactionDao dao.TransactionDAO, categoryDao dao.CategoryDAO, statDao dao.StatDAO) CommandHandler {
+func NewCommandHandler(userRepo repo.UserRepo, transactionDao dao.TransactionDAO, categoryDao dao.CategoryDAO, statRepo repo.StatRepo) CommandHandler {
 	return CommandHandler{
 		userRepo:       userRepo,
 		transactionDao: transactionDao,
 		categoryDao:    categoryDao,
-		statDao:        statDao,
+		statRepo:       statRepo,
 	}
 }
 
@@ -145,55 +144,21 @@ func (handler CommandHandler) Stat(ctx context.Context, msg *tgbotapi.MessageCon
 		msg.Text = message.GenericErrReplyMsg
 		return
 	}
-	param := dao.GetMonthlySearchParam{
+	param := repo.GetMonthlySearchParam{
 		Location:           *loc,
 		PrevMonthIntervals: 3,
 		UserId:             userId,
 	}
-	summaries, err := handler.statDao.GetMonthly(ctx, param)
+	summaries, err := handler.statRepo.GetMonthly(ctx, param)
 	if err != nil {
 		log.Error().Msgf("%v", err)
 		msg.Text = message.GenericErrReplyMsg
 		return
 	}
-	formatTransactionLabelInSummaries(summaries)
+	//formatTransactionLabelInSummaries(summaries)
 	msg.Text = transactionHeaderHTMLMsg
-
-	currMonth := ""
-	var totalAmountForTheMonth int64
-
-	for i, summary := range summaries {
-		month := summary.Month.String()[:3]
-		if currMonth != month {
-			msg.Text += fmt.Sprintf(monthYearHeaderHTMLMsg, month, summary.Year)
-			currMonth = month
-			totalAmountForTheMonth = 0
-		}
-
-		totalAmountForTheMonth += summary.Amount * summary.Multiplier
-		moneyAmount := money.New(summary.Amount, money.SGD)
-		msg.Text += fmt.Sprintf(transactionSummaryHTMLMsg, summary.TransactionTypeLabel, strings.Repeat(" ", summary.GetSpacesToPad()), moneyAmount.Display())
-
-		if i == len(summaries)-1 || summaries[i+1].Month.String()[:3] != currMonth {
-			msg.Text += fmt.Sprintf(transactionTotalHTMLMsg, money.New(totalAmountForTheMonth, money.SGD).Display())
-		}
-	}
+	msg.Text += summaries.GenerateReportText()
 
 	msg.ParseMode = tgbotapi.ModeHTML
 	return
-}
-
-func formatTransactionLabelInSummaries(summaries []*entity.MonthlySummary) {
-	longestLabel := 0
-	for _, summary := range summaries {
-		lengthOfLabel := len(summary.TransactionTypeLabel)
-		if lengthOfLabel > longestLabel {
-			longestLabel = lengthOfLabel
-		}
-	}
-
-	for i := range summaries {
-		label := summaries[i].TransactionTypeLabel
-		summaries[i].SetSpacesToPad(longestLabel - len(label))
-	}
 }
