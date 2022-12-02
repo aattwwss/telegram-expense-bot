@@ -25,22 +25,24 @@ const (
 
 	transactionHeaderHTMLMsg = "<b>Summary\n</b>"
 
-	categoriesInlineColNum = 3
+	transactionTypeInlineColSize = 2
 )
 
 type CommandHandler struct {
-	transactionRepo repo.TransactionRepo
-	categoryRepo    repo.CategoryRepo
-	statRepo        repo.StatRepo
-	userRepo        repo.UserRepo
+	transactionRepo     repo.TransactionRepo
+	transactionTypeRepo repo.TransactionTypeRepo
+	categoryRepo        repo.CategoryRepo
+	statRepo            repo.StatRepo
+	userRepo            repo.UserRepo
 }
 
-func NewCommandHandler(userRepo repo.UserRepo, transactionRepo repo.TransactionRepo, categoryRepo repo.CategoryRepo, statRepo repo.StatRepo) CommandHandler {
+func NewCommandHandler(userRepo repo.UserRepo, transactionRepo repo.TransactionRepo, transactionTypeRepo repo.TransactionTypeRepo, categoryRepo repo.CategoryRepo, statRepo repo.StatRepo) CommandHandler {
 	return CommandHandler{
-		userRepo:        userRepo,
-		transactionRepo: transactionRepo,
-		categoryRepo:    categoryRepo,
-		statRepo:        statRepo,
+		userRepo:            userRepo,
+		transactionRepo:     transactionRepo,
+		transactionTypeRepo: transactionTypeRepo,
+		categoryRepo:        categoryRepo,
+		statRepo:            statRepo,
 	}
 }
 
@@ -94,41 +96,16 @@ func (handler CommandHandler) Transact(ctx context.Context, msg *tgbotapi.Messag
 	}
 
 	amount := money.NewFromFloat(float, money.SGD)
-	msg.Text = fmt.Sprintf(message.TransactionReplyMsg+"%v", amount.AsMajorUnits())
+	msg.Text = fmt.Sprintf(message.TransactionTypeReplyMsg+"%v", amount.AsMajorUnits())
 
-	categories, err := handler.categoryRepo.FindByTransactionTypeId(ctx, 1)
+	transactionTypes, err := handler.transactionTypeRepo.GetAll(ctx)
 	if err != nil {
-		log.Error().Err(err)
-		msg.Text = "Sorry we cannot handle your transaction right now :("
+		msg.Text = message.GenericErrReplyMsg
 		return
 	}
 
-	numOfRows := roundUpDivision(len(categories), categoriesInlineColNum)
-	var categoriesKeyboards [][]tgbotapi.InlineKeyboardButton
+	msg.ReplyMarkup = tgbotapi.InlineKeyboardMarkup{InlineKeyboard: newTransactionTypesKeyboard(transactionTypes, transactionTypeInlineColSize)}
 
-	for i := 0; i < numOfRows; i++ {
-		row := tgbotapi.NewInlineKeyboardRow()
-		for j := 0; j < categoriesInlineColNum; j++ {
-			catIndex := categoriesInlineColNum*i + j
-			if catIndex == len(categories) {
-				break
-			}
-			category := categories[catIndex]
-			serializedCategory := util.CallbackDataSerialize(category, category.Id)
-			button := tgbotapi.NewInlineKeyboardButtonData(category.Name, serializedCategory)
-			row = append(row, button)
-		}
-		categoriesKeyboards = append(categoriesKeyboards, row)
-	}
-
-	msg.ReplyMarkup = tgbotapi.InlineKeyboardMarkup{InlineKeyboard: categoriesKeyboards}
-	return
-}
-
-func roundUpDivision(dividend int, divisor int) int {
-	quotient := float64(dividend) / float64(divisor)
-	quotientCeiling := math.Ceil(quotient)
-	return int(quotientCeiling)
 }
 
 func (handler CommandHandler) Stat(ctx context.Context, msg *tgbotapi.MessageConfig, update tgbotapi.Update) {
@@ -155,4 +132,20 @@ func (handler CommandHandler) Stat(ctx context.Context, msg *tgbotapi.MessageCon
 
 	msg.ParseMode = tgbotapi.ModeHTML
 	return
+}
+
+func newTransactionTypesKeyboard(transactionTypes []domain.TransactionType, colSize int) [][]tgbotapi.InlineKeyboardButton {
+	var configs []util.InlineKeyboardConfig
+	for _, transactionTye := range transactionTypes {
+		config := util.NewInlineKeyboardConfig(transactionTye.Name, util.CallbackDataSerialize(transactionTye, transactionTye.Id))
+		configs = append(configs, config)
+	}
+
+	return util.NewInlineKeyboard(configs, colSize)
+}
+
+func roundUpDivision(dividend int, divisor int) int {
+	quotient := float64(dividend) / float64(divisor)
+	quotientCeiling := math.Ceil(quotient)
+	return int(quotientCeiling)
 }

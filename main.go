@@ -55,6 +55,8 @@ func handleCallback(ctx context.Context, bot *tgbotapi.BotAPI, update tgbotapi.U
 	}
 
 	switch typeName {
+	case "TransactionType":
+		callbackHandler.FromTransactionType(ctx, &msg, update.CallbackQuery, data)
 	case "Category":
 		callbackHandler.FromCategory(ctx, &msg, update.CallbackQuery, data)
 	default:
@@ -116,16 +118,18 @@ func main() {
 
 	userDAO := dao.NewUserDao(dbLoaded)
 	transactionDAO := dao.NewTransactionDAO(dbLoaded)
+	transactionTypeDAO := dao.NewTransactionTypeDAO(dbLoaded)
 	categoryDao := dao.NewCategoryDAO(dbLoaded)
 	statDao := dao.NewStatDAO(dbLoaded)
 
 	transactionRepo := repo.NewTransactionRepo(transactionDAO)
+	transactionTypeRepo := repo.NewTransactionTypeRepo(transactionTypeDAO)
 	userRepo := repo.NewUserRepo(userDAO)
 	statRepo := repo.NewStatRepo(statDao)
 	categoryRepo := repo.NewCategoryRepo(categoryDao)
 
-	commandHandler := handler.NewCommandHandler(userRepo, transactionRepo, categoryRepo, statRepo)
-	callbackHandler := handler.NewCallbackHandler(userRepo, transactionRepo, categoryDao)
+	commandHandler := handler.NewCommandHandler(userRepo, transactionRepo, transactionTypeRepo, categoryRepo, statRepo)
+	callbackHandler := handler.NewCallbackHandler(userRepo, transactionRepo, transactionTypeRepo, categoryRepo)
 
 	bot, err := tgbotapi.NewBotAPI(cfg.TelegramApiToken)
 	if err != nil {
@@ -134,23 +138,25 @@ func main() {
 
 	//bot.Debug = true
 
-	log.Printf("Authorized on account %s", bot.Self.UserName)
+	log.Info().Msgf("Authorized on account %s", bot.Self.UserName)
 
 	u := tgbotapi.NewUpdate(0)
 	u.Timeout = 60
 
 	updates := bot.GetUpdatesChan(u)
 
-	for i := 0; i < 8; i++ {
-		go func(bot *tgbotapi.BotAPI, update <-chan tgbotapi.Update) {
-			for update := range updates {
-				if update.Message != nil {
-					handleMessage(ctx, bot, update, &commandHandler)
-				} else if update.CallbackQuery != nil {
-					handleCallback(ctx, bot, update, &callbackHandler)
-				}
+	processUpdate := func(bot *tgbotapi.BotAPI, update <-chan tgbotapi.Update) {
+		for update := range updates {
+			if update.Message != nil {
+				handleMessage(ctx, bot, update, &commandHandler)
+			} else if update.CallbackQuery != nil {
+				handleCallback(ctx, bot, update, &callbackHandler)
 			}
-		}(bot, updates)
+		}
+	}
+
+	for i := 0; i < 8; i++ {
+		go processUpdate(bot, updates)
 	}
 	select {}
 }

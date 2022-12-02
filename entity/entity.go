@@ -34,3 +34,10 @@ type MonthlySummary struct {
 	TransactionTypeLabel string
 	Multiplier           int64
 }
+
+type TransactionType struct {
+	Id         int64
+	Name       string
+	Multiplier int
+	ReplyText  string
+}
