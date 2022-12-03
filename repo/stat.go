@@ -30,8 +30,8 @@ func (repo StatRepo) GetMonthly(ctx context.Context, param GetMonthlySearchParam
 
 	for _, entity := range entities {
 		summary := domain.MonthlySummary{
-			Month:                entity.Datetime.Month(),
-			Year:                 entity.Datetime.Year(),
+			Month:                entity.Datetime.Month(), // the timezone in entity.Datetime should be ignored
+			Year:                 entity.Datetime.Year(),  // the timezone in entity.Datetime should be ignored
 			Amount:               entity.Amount,
 			TransactionTypeLabel: entity.TransactionTypeLabel,
 			Multiplier:           entity.Multiplier,
