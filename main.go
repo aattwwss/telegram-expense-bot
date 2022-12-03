@@ -109,7 +109,7 @@ func loadEnv(appEnv string) error {
 func runWebhook(bot *tgbotapi.BotAPI) tgbotapi.UpdatesChannel {
 	log.Info().Msg("Running on webhook!")
 
-	go http.ListenAndServeTLS("0.0.0.0:8123", "cert.pem", "key.pem", nil)
+	go http.ListenAndServe("0.0.0.0:8123", nil)
 	time.Sleep(200 * time.Millisecond)
 
 	webhook, err := tgbotapi.NewWebhook("https://expense.atws.duckdns.org/" + bot.Token)
