@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/aattwwss/telegram-expense-bot/dao"
 	"github.com/aattwwss/telegram-expense-bot/domain"
+	"github.com/aattwwss/telegram-expense-bot/util"
 	"time"
 )
 
@@ -12,9 +13,10 @@ type StatRepo struct {
 }
 
 type GetMonthlySearchParam struct {
-	Location           time.Location
-	PrevMonthIntervals int
-	UserId             int64
+	Location  time.Location
+	MonthFrom util.YearMonth // "yyyy-mm"
+	MonthTo   util.YearMonth // "yyyy-mm"
+	UserId    int64
 }
 
 func NewStatRepo(statDao dao.StatDAO) StatRepo {
@@ -23,7 +25,7 @@ func NewStatRepo(statDao dao.StatDAO) StatRepo {
 
 func (repo StatRepo) GetMonthly(ctx context.Context, param GetMonthlySearchParam) (domain.MonthlySummaries, error) {
 	var summaries domain.MonthlySummaries
-	entities, err := repo.statDao.GetMonthly(ctx, param.PrevMonthIntervals, param.UserId)
+	entities, err := repo.statDao.GetMonthly(ctx, param.MonthFrom, param.MonthTo, param.UserId)
 	if err != nil {
 		return nil, err
 	}

@@ -12,6 +12,7 @@ import (
 	"github.com/rs/zerolog/log"
 	"math"
 	"strconv"
+	"time"
 )
 
 const (
@@ -118,7 +119,7 @@ func (handler CommandHandler) Transact(ctx context.Context, msg *tgbotapi.Messag
 
 }
 
-func (handler CommandHandler) Stat(ctx context.Context, msg *tgbotapi.MessageConfig, update tgbotapi.Update) {
+func (handler CommandHandler) Stats(ctx context.Context, msg *tgbotapi.MessageConfig, update tgbotapi.Update) {
 	userId := update.SentFrom().ID
 	user, err := handler.userRepo.FindUserById(ctx, userId)
 	if err != nil {
@@ -132,10 +133,23 @@ func (handler CommandHandler) Stat(ctx context.Context, msg *tgbotapi.MessageCon
 		return
 	}
 
+	now := time.Now()
+	monthTo := util.YearMonth{
+		Month: now.Month(),
+		Year:  now.Year(),
+	}
+
+	from := now.AddDate(0, -2, 0)
+	monthFrom := util.YearMonth{
+		Month: from.Month(),
+		Year:  from.Year(),
+	}
+
 	param := repo.GetMonthlySearchParam{
-		Location:           *user.Location,
-		PrevMonthIntervals: 3,
-		UserId:             userId,
+		Location:  *user.Location,
+		MonthFrom: monthFrom,
+		MonthTo:   monthTo,
+		UserId:    userId,
 	}
 
 	summaries, err := handler.statRepo.GetMonthly(ctx, param)
