@@ -1,0 +1,10 @@
+version: "3"
+services:
+  app:
+    image: 'telegram-expense-bot:latest'
+    restart: unless-stopped
+
+networks:
+  default:
+    name: nginx-proxy-manager
+    external: true
