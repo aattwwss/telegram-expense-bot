@@ -14,6 +14,7 @@ import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/joho/godotenv"
 	"github.com/rs/zerolog/log"
+	"net/http"
 	"os"
 	"strings"
 )
@@ -106,7 +107,7 @@ func loadEnv(appEnv string) error {
 
 func runWebhook(bot *tgbotapi.BotAPI) tgbotapi.UpdatesChannel {
 	log.Info().Msg("Running on webhook!")
-	webhook, err := tgbotapi.NewWebhook("http://localhost:8123/" + bot.Token)
+	webhook, err := tgbotapi.NewWebhook("https://expense.atws.duckdns.org/" + bot.Token)
 	if err != nil {
 		log.Fatal().Err(err)
 	}
@@ -131,7 +132,12 @@ func runWebhook(bot *tgbotapi.BotAPI) tgbotapi.UpdatesChannel {
 	if info.LastErrorDate != 0 {
 		log.Info().Msgf("Telegram callback failed: %s", info.LastErrorMessage)
 	}
+	go func() {
+		err := http.ListenAndServe("0.0.0.0:8123", nil)
+		if err != nil {
 
+		}
+	}()
 	return bot.ListenForWebhook("/" + bot.Token)
 }
 
