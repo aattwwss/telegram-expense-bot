@@ -17,6 +17,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"time"
 )
 
 func botSend(bot *tgbotapi.BotAPI, msg tgbotapi.MessageConfig) {
@@ -107,6 +108,10 @@ func loadEnv(appEnv string) error {
 
 func runWebhook(bot *tgbotapi.BotAPI) tgbotapi.UpdatesChannel {
 	log.Info().Msg("Running on webhook!")
+
+	go http.ListenAndServeTLS("0.0.0.0:8123", "cert.pem", "key.pem", nil)
+	time.Sleep(200 * time.Millisecond)
+
 	webhook, err := tgbotapi.NewWebhook("https://expense.atws.duckdns.org/" + bot.Token)
 	if err != nil {
 		log.Fatal().Err(err)
@@ -127,17 +132,12 @@ func runWebhook(bot *tgbotapi.BotAPI) tgbotapi.UpdatesChannel {
 		return nil
 	}
 
-	log.Info().Msgf("&v", string(marshal))
+	log.Info().Msgf("info: ", string(marshal))
 
 	if info.LastErrorDate != 0 {
 		log.Info().Msgf("Telegram callback failed: %s", info.LastErrorMessage)
 	}
-	go func() {
-		err := http.ListenAndServe("0.0.0.0:8123", nil)
-		if err != nil {
 
-		}
-	}()
 	return bot.ListenForWebhook("/" + bot.Token)
 }
 
