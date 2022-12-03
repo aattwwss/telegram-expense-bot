@@ -19,22 +19,22 @@ func NewInlineKeyboardConfig(label string, data string) InlineKeyboardConfig {
 
 func NewInlineKeyboard(configs []InlineKeyboardConfig, colSize int) [][]tgbotapi.InlineKeyboardButton {
 	numOfRows := roundUpDivision(len(configs), colSize)
-	var categoriesKeyboards [][]tgbotapi.InlineKeyboardButton
+	var itemsKeyboards [][]tgbotapi.InlineKeyboardButton
 
 	for i := 0; i < numOfRows; i++ {
 		row := tgbotapi.NewInlineKeyboardRow()
 		for j := 0; j < colSize; j++ {
-			catIndex := colSize*i + j
-			if catIndex == len(configs) {
+			itemIndex := colSize*i + j
+			if itemIndex == len(configs) {
 				break
 			}
-			config := configs[catIndex]
+			config := configs[itemIndex]
 			button := tgbotapi.NewInlineKeyboardButtonData(config.label, config.data)
 			row = append(row, button)
 		}
-		categoriesKeyboards = append(categoriesKeyboards, row)
+		itemsKeyboards = append(itemsKeyboards, row)
 	}
-	return categoriesKeyboards
+	return itemsKeyboards
 }
 
 func roundUpDivision(dividend int, divisor int) int {
