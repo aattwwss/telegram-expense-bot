@@ -105,7 +105,7 @@ func loadEnv(appEnv string) error {
 
 func runWebhook(bot *tgbotapi.BotAPI) tgbotapi.UpdatesChannel {
 	log.Info().Msg("Running on webhook!")
-	webhook, err := tgbotapi.NewWebhook("https://expense.atws.duckdns.org:8123/" + bot.Token)
+	webhook, err := tgbotapi.NewWebhook("http://localhost:8123/" + bot.Token)
 	if err != nil {
 		log.Fatal().Err(err)
 	}
