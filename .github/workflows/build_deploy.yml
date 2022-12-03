@@ -26,6 +26,7 @@ jobs:
           docker buildx build --platform linux/arm64 -t telegram-expense-bot:arm64 .
       - name: Save the Docker image
         run: |
+          docker images
           docker save -o my-image.tar telegram-expense-bot:arm64
           scp -i ${{ secrets.SSH_PRIVATE }} my-image.tar ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }}:~/
           rm my-image.tar
