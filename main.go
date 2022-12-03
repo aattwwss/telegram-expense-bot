@@ -108,6 +108,7 @@ func loadEnv(appEnv string) error {
 
 func runWebhook(bot *tgbotapi.BotAPI) tgbotapi.UpdatesChannel {
 	log.Info().Msg("Running on webhook!")
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {})
 
 	go http.ListenAndServe("0.0.0.0:8123", nil)
 	time.Sleep(200 * time.Millisecond)
