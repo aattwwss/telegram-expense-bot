@@ -87,8 +87,7 @@ func handleMessage(ctx context.Context, bot *tgbotapi.BotAPI, update tgbotapi.Up
 	botSend(bot, msg)
 }
 
-func loadEnv() error {
-	appEnv := os.Getenv("APP_ENV")
+func loadEnv(appEnv string) error {
 	if appEnv == "" || appEnv == "dev" {
 		err := godotenv.Load(".env.local")
 		if err != nil {
@@ -104,9 +103,40 @@ func loadEnv() error {
 	return nil
 }
 
+func runWebhook(bot *tgbotapi.BotAPI) tgbotapi.UpdatesChannel {
+	webhook, err := tgbotapi.NewWebhook("https://expense.atws.duckdns.org:8123/" + bot.Token)
+	if err != nil {
+		log.Fatal().Err(err)
+	}
+
+	_, err = bot.Request(webhook)
+	if err != nil {
+		log.Fatal().Err(err)
+	}
+
+	info, err := bot.GetWebhookInfo()
+	if err != nil {
+		log.Fatal().Err(err)
+	}
+
+	if info.LastErrorDate != 0 {
+		log.Info().Msgf("Telegram callback failed: %s", info.LastErrorMessage)
+	}
+
+	return bot.ListenForWebhook("/" + bot.Token)
+}
+
+func runPolling(bot *tgbotapi.BotAPI) tgbotapi.UpdatesChannel {
+	u := tgbotapi.NewUpdate(0)
+	u.Timeout = 60
+
+	return bot.GetUpdatesChan(u)
+}
+
 func main() {
 	ctx := context.Background()
-	err := loadEnv()
+	appEnv := os.Getenv("APP_ENV")
+	err := loadEnv(appEnv)
 	if err != nil {
 		log.Fatal().Err(err)
 	}
@@ -135,15 +165,15 @@ func main() {
 	if err != nil {
 		log.Fatal().Err(err)
 	}
-
-	//bot.Debug = true
-
 	log.Info().Msgf("Authorized on account %s", bot.Self.UserName)
 
-	u := tgbotapi.NewUpdate(0)
-	u.Timeout = 60
+	var updates tgbotapi.UpdatesChannel
 
-	updates := bot.GetUpdatesChan(u)
+	if appEnv == "PROD" {
+		updates = runWebhook(bot)
+	} else {
+		updates = runPolling(bot)
+	}
 
 	processUpdate := func(bot *tgbotapi.BotAPI, update <-chan tgbotapi.Update) {
 		for update := range updates {
@@ -159,4 +189,5 @@ func main() {
 		go processUpdate(bot, updates)
 	}
 	select {}
+
 }
