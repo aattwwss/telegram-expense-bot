@@ -1,0 +1,40 @@
+name: Build and Deploy
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: 1.15
+      - name: Build the Docker image
+        run: |
+          make build
+          docker build -t telegram-expense-bot:latest .
+          docker buildx create --name mybuilder
+          docker buildx use mybuilder
+          docker buildx inspect --bootstrap
+          docker buildx build --platform linux/arm64 -t telegram-expense-bot:arm64 .
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy the Docker image
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USERNAME }}
+          key: ${{ secrets.DEPLOY_PRIVATE_KEY }}
+          script: |
+            ssh -i ${{ secrets.DEPLOY_PRIVATE_KEY }} ${{ secrets.DEPLOY_USERNAME }}@${{ secrets.DEPLOY_HOST }} 'bash -s' <<EOF
+            docker save telegram-expense-bot:arm64 | ssh -i ${{ secrets.DEPLOY_PRIVATE_KEY }} ${{ secrets.DEPLOY_USERNAME }}@${{ secrets.DEPLOY_HOST }} 'docker load'
+            docker stop telegram-expense-bot || true
+            docker rm telegram-expense-bot || true
+            docker run -d --name telegram-expense-bot -p 8080:8080 telegram-expense-bot:arm64
+            EOF
