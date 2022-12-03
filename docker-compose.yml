@@ -3,7 +3,9 @@ services:
   app:
     image: 'telegram-expense-bot:latest'
     restart: unless-stopped
-
+  environment:
+    appEnv: prod
+    env_file: .env.local
 networks:
   default:
     name: nginx-proxy-manager
