@@ -172,7 +172,7 @@ func main() {
 
 	var updates tgbotapi.UpdatesChannel
 
-	if appEnv == "PROD" {
+	if strings.EqualFold(appEnv, "prod") {
 		updates = runWebhook(bot)
 	} else {
 		updates = runPolling(bot)
