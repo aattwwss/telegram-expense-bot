@@ -27,7 +27,7 @@ jobs:
       - name: Save the Docker image
         run: |
           docker save -o my-image.tar telegram-expense-bot:arm64
-          scp -i ${{ secrets.SSH_PRIVATE }} my-image.tar ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }}/~
+          scp -i ${{ secrets.SSH_PRIVATE }} my-image.tar ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }}:~/
           rm my-image.tar
   deploy:
     runs-on: ubuntu-latest
