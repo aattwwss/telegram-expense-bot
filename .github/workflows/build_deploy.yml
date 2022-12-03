@@ -13,7 +13,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v2
         with:
-          go-version: 1.15
+          go-version: 1.19
       - name: Build the Docker image
         run: |
           make build
@@ -28,12 +28,12 @@ jobs:
       - name: Deploy the Docker image
         uses: appleboy/ssh-action@master
         with:
-          host: ${{ secrets.DEPLOY_HOST }}
-          username: ${{ secrets.DEPLOY_USERNAME }}
-          key: ${{ secrets.DEPLOY_PRIVATE_KEY }}
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE }}
           script: |
-            ssh -i ${{ secrets.DEPLOY_PRIVATE_KEY }} ${{ secrets.DEPLOY_USERNAME }}@${{ secrets.DEPLOY_HOST }} 'bash -s' <<EOF
-            docker save telegram-expense-bot:arm64 | ssh -i ${{ secrets.DEPLOY_PRIVATE_KEY }} ${{ secrets.DEPLOY_USERNAME }}@${{ secrets.DEPLOY_HOST }} 'docker load'
+            ssh -i ${{ secrets.SSH_PRIVATE }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} 'bash -s' <<EOF
+            docker save telegram-expense-bot:arm64 | ssh -i ${{ secrets.SSH_PRIVATE }} ${{ secrets.SSH_HOST }}@${{ secrets.DEPLOY_HOST }} 'docker load'
             docker stop telegram-expense-bot || true
             docker rm telegram-expense-bot || true
             docker run -d --name telegram-expense-bot -p 8080:8080 telegram-expense-bot:arm64
