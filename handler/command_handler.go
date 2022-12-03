@@ -12,7 +12,6 @@ import (
 	"github.com/rs/zerolog/log"
 	"math"
 	"strconv"
-	"time"
 )
 
 const (
@@ -64,13 +63,11 @@ func (handler CommandHandler) Start(ctx context.Context, msg *tgbotapi.MessageCo
 		return
 	}
 
-	loc, _ := time.LoadLocation("Asia/Singapore")
-
 	user := domain.User{
 		Id:       teleUser.ID,
 		Locale:   "en",
-		Currency: money.GetCurrency("SGD"),
-		Location: loc,
+		Currency: dbUser.Currency,
+		Location: dbUser.Location,
 	}
 
 	err = handler.userRepo.Add(ctx, user)
@@ -89,13 +86,26 @@ func (handler CommandHandler) Help(ctx context.Context, msg *tgbotapi.MessageCon
 }
 
 func (handler CommandHandler) Transact(ctx context.Context, msg *tgbotapi.MessageConfig, update tgbotapi.Update) {
+	userId := update.SentFrom().ID
+	user, err := handler.userRepo.FindUserById(ctx, userId)
+	if err != nil {
+		log.Error().Msgf("Error finding user for transact: %v", err)
+		msg.Text = message.GenericErrReplyMsg
+		return
+	}
+	if user == nil {
+		log.Error().Msgf("User not found for transact: %v", userId)
+		msg.Text = message.GenericErrReplyMsg
+		return
+	}
+
 	float, err := strconv.ParseFloat(update.Message.Text, 64)
 	if err != nil {
 		msg.Text = cannotRecogniseAmountMsg
 		return
 	}
 
-	amount := money.NewFromFloat(float, money.SGD)
+	amount := money.NewFromFloat(float, user.Currency.Code)
 	msg.Text = fmt.Sprintf(message.TransactionTypeReplyMsg+"%v", amount.AsMajorUnits())
 
 	transactionTypes, err := handler.transactionTypeRepo.GetAll(ctx)
