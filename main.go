@@ -155,7 +155,7 @@ func main() {
 		}
 	}
 
-	for i := 0; i < 8; i++ {
+	for i := 0; i < cfg.NumRoutines; i++ {
 		go processUpdate(bot, updates)
 	}
 	select {}
