@@ -110,16 +110,24 @@ func (handler CommandHandler) Transact(ctx context.Context, msg *tgbotapi.Messag
 
 func (handler CommandHandler) Stat(ctx context.Context, msg *tgbotapi.MessageConfig, update tgbotapi.Update) {
 	userId := update.SentFrom().ID
-	loc, err := time.LoadLocation("Asia/Singapore")
-	if err != nil || loc == nil {
+	user, err := handler.userRepo.FindUserById(ctx, userId)
+	if err != nil {
+		log.Error().Msgf("Error finding user for stats: %v", err)
 		msg.Text = message.GenericErrReplyMsg
 		return
 	}
+	if user == nil {
+		log.Error().Msgf("User not found for stats: %v", userId)
+		msg.Text = message.GenericErrReplyMsg
+		return
+	}
+
 	param := repo.GetMonthlySearchParam{
-		Location:           *loc,
+		Location:           *user.Location,
 		PrevMonthIntervals: 3,
 		UserId:             userId,
 	}
+
 	summaries, err := handler.statRepo.GetMonthly(ctx, param)
 	if err != nil {
 		log.Error().Msgf("%v", err)
