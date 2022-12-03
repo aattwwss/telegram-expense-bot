@@ -62,3 +62,28 @@ create table transaction
 );
 
 comment on column transaction.amount is 'Normalised to the lowest denominator';
+
+insert into category (name, transaction_type_id)
+values  ('Child', 1),
+        ('Clothing', 1),
+        ('Debt', 1),
+        ('Education', 1),
+        ('Entertainment', 1),
+        ('Food', 1),
+        ('Gifts', 1),
+        ('Health', 1),
+        ('Housing', 1),
+        ('Insurance', 1),
+        ('Personal', 1),
+        ('Taxes', 1),
+        ('Transportation', 1),
+        ('Other', 1),
+        ('Salary', 2),
+        ('Side Project', 2),
+        ('Tax Refund', 2),
+        ('Reimbursement', 2),
+        ('Other', 2);
+
+insert into expenditure_bot.transaction_type (name, multiplier, display_order, reply_text)
+values  ('🟢 Income', 1, 1, 'You earned %s from %s'),
+        ('🔴 Spent', -1, 2, 'You spent %s on %s');
