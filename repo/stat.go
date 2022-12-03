@@ -23,15 +23,15 @@ func NewStatRepo(statDao dao.StatDAO) StatRepo {
 
 func (repo StatRepo) GetMonthly(ctx context.Context, param GetMonthlySearchParam) (domain.MonthlySummaries, error) {
 	var summaries domain.MonthlySummaries
-	entities, err := repo.statDao.GetMonthly(ctx, param.Location, param.PrevMonthIntervals, param.UserId)
+	entities, err := repo.statDao.GetMonthly(ctx, param.PrevMonthIntervals, param.UserId)
 	if err != nil {
 		return nil, err
 	}
 
 	for _, entity := range entities {
 		summary := domain.MonthlySummary{
-			Month:                entity.Month,
-			Year:                 entity.Year,
+			Month:                entity.Datetime.Month(),
+			Year:                 entity.Datetime.Year(),
 			Amount:               entity.Amount,
 			TransactionTypeLabel: entity.TransactionTypeLabel,
 			Multiplier:           entity.Multiplier,

@@ -28,8 +28,7 @@ type Category struct {
 }
 
 type MonthlySummary struct {
-	Month                time.Month
-	Year                 int
+	Datetime             time.Time
 	Amount               int64
 	TransactionTypeLabel string
 	Multiplier           int64
