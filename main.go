@@ -128,6 +128,8 @@ func runWebhook(bot *tgbotapi.BotAPI) tgbotapi.UpdatesChannel {
 }
 
 func runPolling(bot *tgbotapi.BotAPI) tgbotapi.UpdatesChannel {
+	log.Info().Msg("Running on polling!")
+
 	u := tgbotapi.NewUpdate(0)
 	u.Timeout = 60
 
