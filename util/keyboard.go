@@ -37,7 +37,7 @@ func NewInlineKeyboard(configs []InlineKeyboardConfig, colSize int, cancellable 
 
 	if cancellable {
 		row := tgbotapi.NewInlineKeyboardRow()
-		button := tgbotapi.NewInlineKeyboardButtonData("Cancel", "cancel||cancel")
+		button := tgbotapi.NewInlineKeyboardButtonData("Cancel", "Cancel||cancel")
 		row = append(row, button)
 		itemsKeyboards = append(itemsKeyboards, row)
 	}

@@ -10,7 +10,6 @@ import (
 	"github.com/aattwwss/telegram-expense-bot/util"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/rs/zerolog/log"
-	"math"
 	"strconv"
 	"time"
 )
@@ -174,10 +173,4 @@ func newTransactionTypesKeyboard(transactionTypes []domain.TransactionType, colS
 	}
 
 	return util.NewInlineKeyboard(configs, colSize, true)
-}
-
-func roundUpDivision(dividend int, divisor int) int {
-	quotient := float64(dividend) / float64(divisor)
-	quotientCeiling := math.Ceil(quotient)
-	return int(quotientCeiling)
 }
