@@ -1,16 +1,14 @@
-create table app_user
+create table currency
 (
-    id       bigint                                                  not null
-        constraint telegram_user_pkey
-        primary key
-        constraint telegram_user_id_key
-        unique,
-    locale   varchar(10) default 'en'::character varying             not null,
-    currency char(3)     default 'SGD'::bpchar                       not null
-        constraint user_currency_fk
-        references currency,
-    timezone varchar(30) default 'Asia/Singapore'::character varying not null
+    code        varchar(3)           not null
+        constraint currency_pk
+            primary key
+        constraint check_code
+            check ((code)::text ~ '^[A-Z]{3}$'::text),
+    denominator smallint default 100 not null
 );
+
+comment on constraint check_code on currency is '3 letter uppercase';
 
 create table transaction_type
 (
@@ -23,17 +21,19 @@ create table transaction_type
     reply_text    varchar(64) default ''::character varying not null
 );
 
-create table currency
+create table app_user
 (
-    code        varchar(3)           not null
-        constraint currency_pk
+    id       bigint                                                  not null
+        constraint telegram_user_pkey
             primary key
-        constraint check_code
-            check ((code)::text ~ '^[A-Z]{3}$'::text),
-    denominator smallint default 100 not null
+        constraint telegram_user_id_key
+            unique,
+    locale   varchar(10) default 'en'::character varying             not null,
+    currency char(3)     default 'SGD'::bpchar                       not null
+        constraint user_currency_fk
+            references currency,
+    timezone varchar(30) default 'Asia/Singapore'::character varying not null
 );
-
-comment on constraint check_code on currency is '3 letter uppercase';
 
 create table category
 (
@@ -63,27 +63,28 @@ create table transaction
 
 comment on column transaction.amount is 'Normalised to the lowest denominator';
 
-insert into category (name, transaction_type_id)
-values  ('Child', 1),
-        ('Clothing', 1),
-        ('Debt', 1),
-        ('Education', 1),
-        ('Entertainment', 1),
-        ('Food', 1),
-        ('Gifts', 1),
-        ('Health', 1),
-        ('Housing', 1),
-        ('Insurance', 1),
-        ('Personal', 1),
-        ('Taxes', 1),
-        ('Transportation', 1),
-        ('Other', 1),
-        ('Salary', 2),
-        ('Side Project', 2),
-        ('Tax Refund', 2),
-        ('Reimbursement', 2),
-        ('Other', 2);
+insert into transaction_type (name, multiplier, display_order, reply_text)
+values ('🟢 Income', 1, 1, 'You earned %s from %s'),
+       ('🔴 Spent', -1, 2, 'You spent %s on %s');
 
-insert into expenditure_bot.transaction_type (name, multiplier, display_order, reply_text)
-values  ('🟢 Income', 1, 1, 'You earned %s from %s'),
-        ('🔴 Spent', -1, 2, 'You spent %s on %s');
+insert into category (name, transaction_type_id)
+values ('Child', 1),
+       ('Clothing', 1),
+       ('Debt', 1),
+       ('Education', 1),
+       ('Entertainment', 1),
+       ('Food', 1),
+       ('Gifts', 1),
+       ('Health', 1),
+       ('Housing', 1),
+       ('Insurance', 1),
+       ('Personal', 1),
+       ('Taxes', 1),
+       ('Transportation', 1),
+       ('Other', 1),
+       ('Salary', 2),
+       ('Side Project', 2),
+       ('Tax Refund', 2),
+       ('Reimbursement', 2),
+       ('Other', 2);
+
