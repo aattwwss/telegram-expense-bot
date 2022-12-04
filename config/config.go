@@ -14,5 +14,5 @@ type EnvConfig struct {
 
 	AppEnv string `env:"APP_ENV"`
 
-	WebhookHost string `ENV:"WEBHOOK_HOST"`
+	WebhookHost string `env:"WEBHOOK_HOST"`
 }
