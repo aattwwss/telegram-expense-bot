@@ -8,6 +8,8 @@ create table currency
     denominator smallint default 100 not null
 );
 
+comment on constraint check_code on currency is '3 letter uppercase';
+
 create table transaction_type
 (
     id            serial
@@ -32,8 +34,6 @@ create table app_user
             references currency,
     timezone varchar(30) default 'Asia/Singapore'::character varying not null
 );
-
-comment on constraint check_code on currency is '3 letter uppercase';
 
 create table category
 (
