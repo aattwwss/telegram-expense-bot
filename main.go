@@ -89,7 +89,8 @@ func handleMessage(ctx context.Context, bot *tgbotapi.BotAPI, update tgbotapi.Up
 	botSend(bot, msg)
 }
 
-func loadEnv(appEnv string) error {
+func loadEnv() error {
+	appEnv := os.Getenv("APP_ENV")
 	if appEnv == "" || appEnv == "dev" {
 		err := godotenv.Load(".env.local")
 		if err != nil {
@@ -105,14 +106,14 @@ func loadEnv(appEnv string) error {
 	return nil
 }
 
-func runWebhook(bot *tgbotapi.BotAPI) tgbotapi.UpdatesChannel {
+func runWebhook(bot *tgbotapi.BotAPI, cfg config.EnvConfig) tgbotapi.UpdatesChannel {
 	log.Info().Msg("Running on webhook!")
 	http.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) { w.Write([]byte("OK")) })
 
 	go http.ListenAndServe("0.0.0.0:8123", nil)
 	time.Sleep(200 * time.Millisecond)
 
-	webhook, err := tgbotapi.NewWebhook("https://expense.atws.duckdns.org/" + bot.Token)
+	webhook, err := tgbotapi.NewWebhook(cfg.WebhookHost + "/" + bot.Token)
 	if err != nil {
 		log.Fatal().Err(err)
 	}
@@ -146,8 +147,8 @@ func runPolling(bot *tgbotapi.BotAPI) tgbotapi.UpdatesChannel {
 
 func main() {
 	ctx := context.Background()
-	appEnv := os.Getenv("APP_ENV")
-	err := loadEnv(appEnv)
+
+	err := loadEnv()
 	if err != nil {
 		log.Fatal().Err(err)
 	}
@@ -180,8 +181,8 @@ func main() {
 
 	var updates tgbotapi.UpdatesChannel
 
-	if strings.EqualFold(appEnv, "prod") {
-		updates = runWebhook(bot)
+	if strings.EqualFold(cfg.AppEnv, "prod") {
+		updates = runWebhook(bot, cfg)
 	} else {
 		updates = runPolling(bot)
 	}

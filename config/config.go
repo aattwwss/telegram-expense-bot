@@ -11,4 +11,8 @@ type EnvConfig struct {
 	DbPort     string `env:"DB_PORT"`
 	DbDatabase string `env:"DB_DATABASE"`
 	DbSchema   string `env:"DB_SCHEMA"`
+
+	AppEnv string `env:"APP_ENV"`
+
+	WebhookHost string `ENV:"WEBHOOK_HOST"`
 }
