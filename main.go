@@ -111,7 +111,7 @@ func runWebhook(bot *tgbotapi.BotAPI, cfg config.EnvConfig) tgbotapi.UpdatesChan
 	log.Info().Msg("Running on webhook!")
 	http.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) { w.Write([]byte("OK")) })
 
-	go http.ListenAndServe("0.0.0.0:8123", nil)
+	go http.ListenAndServe(cfg.AppHost+":"+cfg.AppPort, nil)
 	time.Sleep(200 * time.Millisecond)
 
 	webhook, err := tgbotapi.NewWebhook(cfg.WebhookHost + "/" + bot.Token)

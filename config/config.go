@@ -5,6 +5,9 @@ type EnvConfig struct {
 
 	NumRoutines int `env:"NUM_ROUTINES"`
 
+	AppHost string `env:"APP_HOST"`
+	AppPort string `env:"APP_PORT"`
+
 	DbUsername string `env:"DB_USERNAME"`
 	DbPassword string `env:"DB_PASSWORD"`
 	DbHost     string `env:"DB_HOST"`
