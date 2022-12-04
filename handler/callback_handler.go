@@ -47,14 +47,14 @@ func (handler CallbackHandler) FromTransactionType(ctx context.Context, msg *tgb
 
 	categories, err := handler.categoryRepo.FindByTransactionTypeId(ctx, transactionTypeId)
 	if err != nil {
-		log.Error().Msgf("%V", err)
+		log.Error().Msgf("%v", err)
 		msg.Text = message.GenericErrReplyMsg
 		return
 	}
 
 	moneyAmount, err := parseMoneyFromCallback(text, message.TransactionTypeReplyMsg, money.SGD)
 	if err != nil {
-		log.Error().Msgf("%V", err)
+		log.Error().Msgf("%v", err)
 		msg.Text = message.GenericErrReplyMsg
 		return
 	}
@@ -126,6 +126,6 @@ func newCategoriesKeyboard(categories []domain.Category, colSize int) [][]tgbota
 		configs = append(configs, config)
 	}
 
-	return util.NewInlineKeyboard(configs, colSize)
+	return util.NewInlineKeyboard(configs, colSize, true)
 
 }

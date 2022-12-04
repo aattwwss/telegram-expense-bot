@@ -173,7 +173,7 @@ func newTransactionTypesKeyboard(transactionTypes []domain.TransactionType, colS
 		configs = append(configs, config)
 	}
 
-	return util.NewInlineKeyboard(configs, colSize)
+	return util.NewInlineKeyboard(configs, colSize, true)
 }
 
 func roundUpDivision(dividend int, divisor int) int {
