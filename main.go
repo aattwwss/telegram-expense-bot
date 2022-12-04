@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"github.com/aattwwss/telegram-expense-bot/config"
 	"github.com/aattwwss/telegram-expense-bot/dao"
@@ -108,7 +107,7 @@ func loadEnv(appEnv string) error {
 
 func runWebhook(bot *tgbotapi.BotAPI) tgbotapi.UpdatesChannel {
 	log.Info().Msg("Running on webhook!")
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) { log.Info().Msgf("called") })
+	http.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) { w.Write([]byte("OK")) })
 
 	go http.ListenAndServe("0.0.0.0:8123", nil)
 	time.Sleep(200 * time.Millisecond)
@@ -128,13 +127,6 @@ func runWebhook(bot *tgbotapi.BotAPI) tgbotapi.UpdatesChannel {
 		log.Fatal().Err(err)
 	}
 
-	marshal, err := json.Marshal(info)
-	if err != nil {
-		return nil
-	}
-
-	log.Info().Msgf("info: ", string(marshal))
-
 	if info.LastErrorDate != 0 {
 		log.Info().Msgf("Telegram callback failed: %s", info.LastErrorMessage)
 	}
@@ -143,6 +135,7 @@ func runWebhook(bot *tgbotapi.BotAPI) tgbotapi.UpdatesChannel {
 }
 
 func runPolling(bot *tgbotapi.BotAPI) tgbotapi.UpdatesChannel {
+
 	log.Info().Msg("Running on polling!")
 
 	u := tgbotapi.NewUpdate(0)
