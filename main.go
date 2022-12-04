@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"github.com/aattwwss/telegram-expense-bot/config"
 	"github.com/aattwwss/telegram-expense-bot/dao"
@@ -127,6 +128,10 @@ func runWebhook(bot *tgbotapi.BotAPI, cfg config.EnvConfig) tgbotapi.UpdatesChan
 	if err != nil {
 		log.Fatal().Err(err)
 	}
+
+	s, _ := json.Marshal(info)
+
+	log.Info().Msgf("Telegram callback failed: %s", s)
 
 	if info.LastErrorDate != 0 {
 		log.Info().Msgf("Telegram callback failed: %s", info.LastErrorMessage)
