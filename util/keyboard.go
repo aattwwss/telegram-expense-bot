@@ -10,6 +10,20 @@ type InlineKeyboardConfig struct {
 	data  string
 }
 
+func CloseInlineKeyboard(bot *tgbotapi.BotAPI, update tgbotapi.Update) error {
+	editMsgConfig := tgbotapi.EditMessageReplyMarkupConfig{
+		BaseEdit: tgbotapi.BaseEdit{
+			ChatID:      update.CallbackQuery.Message.Chat.ID,
+			MessageID:   update.CallbackQuery.Message.MessageID,
+			ReplyMarkup: nil,
+		},
+	}
+	if _, err := bot.Request(editMsgConfig); err != nil {
+		return err
+	}
+	return nil
+}
+
 func NewInlineKeyboardConfig(label string, data string) InlineKeyboardConfig {
 	return InlineKeyboardConfig{
 		label: label,

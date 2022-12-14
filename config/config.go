@@ -15,7 +15,6 @@ type EnvConfig struct {
 	DbDatabase string `env:"DB_DATABASE"`
 	DbSchema   string `env:"DB_SCHEMA"`
 
-	AppEnv string `env:"APP_ENV"`
-
-	WebhookHost string `env:"WEBHOOK_HOST"`
+	WebhookHost    string `env:"WEBHOOK_HOST"`
+	WebhookEnabled bool   `env:"WEBHOOK_ENABLED"`
 }

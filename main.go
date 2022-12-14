@@ -10,6 +10,7 @@ import (
 	"github.com/aattwwss/telegram-expense-bot/handler"
 	"github.com/aattwwss/telegram-expense-bot/message"
 	"github.com/aattwwss/telegram-expense-bot/repo"
+	"github.com/aattwwss/telegram-expense-bot/util"
 	"github.com/caarlos0/env/v6"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/joho/godotenv"
@@ -34,21 +35,11 @@ func decodeCallbackData(update tgbotapi.Update) (string, string, error) {
 	return dataArr[0], dataArr[1], nil
 }
 
-func closeInlineKeyboard(bot *tgbotapi.BotAPI, update tgbotapi.Update) {
-	editMsgConfig := tgbotapi.EditMessageReplyMarkupConfig{
-		BaseEdit: tgbotapi.BaseEdit{
-			ChatID:      update.CallbackQuery.Message.Chat.ID,
-			MessageID:   update.CallbackQuery.Message.MessageID,
-			ReplyMarkup: nil,
-		},
-	}
-	if _, err := bot.Request(editMsgConfig); err != nil {
-		log.Error().Msgf("handleMessage error: %v", err)
-	}
-}
-
 func handleCallback(ctx context.Context, bot *tgbotapi.BotAPI, update tgbotapi.Update, callbackHandler *handler.CallbackHandler) {
-	closeInlineKeyboard(bot, update)
+	err := util.CloseInlineKeyboard(bot, update)
+	if err != nil {
+		log.Error().Msgf("handleCallback error: %v", err)
+	}
 
 	msg := tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, "")
 	typeName, data, err := decodeCallbackData(update)
@@ -71,6 +62,7 @@ func handleCallback(ctx context.Context, bot *tgbotapi.BotAPI, update tgbotapi.U
 
 	botSend(bot, msg)
 }
+
 func handleMessage(ctx context.Context, bot *tgbotapi.BotAPI, update tgbotapi.Update, commandHandler *handler.CommandHandler) {
 	log.Info().Msgf("Received: %v", update.Message.Text)
 
@@ -188,7 +180,7 @@ func main() {
 
 	var updates tgbotapi.UpdatesChannel
 
-	if strings.EqualFold(cfg.AppEnv, "prod") {
+	if cfg.WebhookEnabled {
 		updates = runWebhook(bot, cfg)
 	} else {
 		updates = runPolling(bot)
@@ -208,5 +200,4 @@ func main() {
 		go processUpdate(bot, updates)
 	}
 	select {}
-
 }
