@@ -167,8 +167,8 @@ func (handler CommandHandler) Stats(ctx context.Context, msg *tgbotapi.MessageCo
 
 func newTransactionTypesKeyboard(transactionTypes []domain.TransactionType, colSize int) [][]tgbotapi.InlineKeyboardButton {
 	var configs []util.InlineKeyboardConfig
-	for _, transactionTye := range transactionTypes {
-		config := util.NewInlineKeyboardConfig(transactionTye.Name, util.CallbackDataSerialize(transactionTye, transactionTye.Id))
+	for _, transactionType := range transactionTypes {
+		config := util.NewInlineKeyboardConfig(transactionType.Name, util.CallbackDataSerialize(transactionType, transactionType.Id))
 		configs = append(configs, config)
 	}
 
