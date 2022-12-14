@@ -63,11 +63,13 @@ func (handler CommandHandler) Start(ctx context.Context, msg *tgbotapi.MessageCo
 		return
 	}
 
+	defaultLocation, _ := time.LoadLocation("Asia/Singapore")
+
 	user := domain.User{
 		Id:       teleUser.ID,
 		Locale:   "en",
-		Currency: dbUser.Currency,
-		Location: dbUser.Location,
+		Currency: money.GetCurrency(money.SGD),
+		Location: defaultLocation,
 	}
 
 	err = handler.userRepo.Add(ctx, user)
