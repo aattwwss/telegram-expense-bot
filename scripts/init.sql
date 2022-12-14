@@ -10,6 +10,8 @@ create table currency
 
 comment on constraint check_code on currency is '3 letter uppercase';
 
+INSERT INTO currency (code, denominator) VALUES ('SGD', 100);
+
 create table transaction_type
 (
     id            serial
