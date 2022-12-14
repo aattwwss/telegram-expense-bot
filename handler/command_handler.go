@@ -10,7 +10,9 @@ import (
 	"github.com/aattwwss/telegram-expense-bot/util"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/rs/zerolog/log"
+	"regexp"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -26,6 +28,8 @@ const (
 
 	transactionTypeInlineColSize = 2
 )
+
+var floatParser = regexp.MustCompile(`-?\d[\d,]*[.]?[\d{2}]*`)
 
 type CommandHandler struct {
 	transactionRepo     repo.TransactionRepo
@@ -101,7 +105,18 @@ func (handler CommandHandler) Transact(ctx context.Context, msg *tgbotapi.Messag
 		return
 	}
 
-	float, err := strconv.ParseFloat(update.Message.Text, 64)
+	matches := floatParser.FindAllString(update.Message.Text, -1)
+	if len(matches) == 0 {
+		msg.Text = cannotRecogniseAmountMsg
+		return
+	}
+
+	amountString := matches[0]
+	description := strings.TrimSpace(util.After(update.Message.Text, amountString))
+
+	log.Info().Msgf("Description: %s", description)
+
+	float, err := strconv.ParseFloat(amountString, 64)
 	if err != nil {
 		msg.Text = cannotRecogniseAmountMsg
 		return
