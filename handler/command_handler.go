@@ -108,7 +108,8 @@ func (handler CommandHandler) Transact(ctx context.Context, msg *tgbotapi.Messag
 	}
 
 	amount := money.NewFromFloat(float, user.Currency.Code)
-	msg.Text = fmt.Sprintf(message.TransactionTypeReplyMsg+"%v", amount.AsMajorUnits())
+	amountPrecision := util.GetFloatFormatter(*amount.Currency())
+	msg.Text = fmt.Sprintf(message.TransactionTypeReplyMsg+amountPrecision, amount.AsMajorUnits())
 
 	transactionTypes, err := handler.transactionTypeRepo.GetAll(ctx)
 	if err != nil {

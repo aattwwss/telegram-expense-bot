@@ -59,7 +59,9 @@ func (handler CallbackHandler) FromTransactionType(ctx context.Context, msg *tgb
 		return
 	}
 
-	msg.Text = fmt.Sprintf(message.TransactionReplyMsg+"%v", moneyAmount.AsMajorUnits())
+	moneyPrecision := util.GetFloatFormatter(*moneyAmount.Currency())
+
+	msg.Text = fmt.Sprintf(message.TransactionReplyMsg+moneyPrecision, moneyAmount.AsMajorUnits())
 	msg.ReplyMarkup = tgbotapi.InlineKeyboardMarkup{InlineKeyboard: newCategoriesKeyboard(categories, categoriesInlineColSize)}
 
 }
