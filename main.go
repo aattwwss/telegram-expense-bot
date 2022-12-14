@@ -86,7 +86,7 @@ func handleMessage(ctx context.Context, bot *tgbotapi.BotAPI, update tgbotapi.Up
 
 func loadEnv() error {
 	appEnv := os.Getenv("APP_ENV")
-	if appEnv == "" || appEnv == "dev" {
+	if appEnv == "" || appEnv == "DEV" {
 		err := godotenv.Load(".env.local")
 		if err != nil {
 			return err
