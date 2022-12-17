@@ -11,7 +11,6 @@ import (
 	"github.com/aattwwss/telegram-expense-bot/util"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/rs/zerolog/log"
-	"regexp"
 	"strconv"
 	"time"
 )
@@ -21,15 +20,13 @@ const (
 	errorFindingUserMsg      = "Sorry there is a problem fetching your information.\n"
 	errorCreatingUserMsg     = "Sorry there is a problem signing you up.\n"
 	signUpSuccessMsg         = "Congratulations! We can get you started right away!\n"
-	helpMsg                  = "Type /start to register.\nType <category>, <price>, [date]\n"
+	helpMsg                  = "Type /start to register.\nType /stats to view your last 3 months expenses.\n\nStart recording your expenses by typing the amount you want to save, followed by the description.\n\ne.g. 12.34 Canned pasta"
 	cannotRecogniseAmountMsg = "I don't recognise that amount of money :(\n"
 
 	transactionHeaderHTMLMsg = "<b>Summary\n</b>"
 
 	transactionTypeInlineColSize = 2
 )
-
-var floatParser = regexp.MustCompile(`-?\d[\d,]*[.]?[\d{2}]*`)
 
 type CommandHandler struct {
 	transactionRepo     repo.TransactionRepo
