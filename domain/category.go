@@ -1,7 +1,7 @@
 package domain
 
 type Category struct {
-	Id                int64
+	Id                int
 	Name              string
-	TransactionTypeId int64
+	TransactionTypeId int
 }

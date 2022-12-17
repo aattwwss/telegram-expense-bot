@@ -1,12 +1,13 @@
 package util
 
 import (
-	"fmt"
-	"reflect"
+	"encoding/json"
 )
 
-func CallbackDataSerialize[T any](t T, data any) string {
-	typeName := reflect.TypeOf(t).Name()
-	res := fmt.Sprintf("%s||%v", typeName, data)
-	return res
+func ToJson[T any](t T) (string, error) {
+	s, err := json.Marshal(t)
+	if err != nil {
+		return "", err
+	}
+	return string(s), nil
 }

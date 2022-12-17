@@ -35,7 +35,7 @@ func (repo TransactionTypeRepo) GetAll(ctx context.Context) ([]domain.Transactio
 	return types, nil
 }
 
-func (repo TransactionTypeRepo) GetById(ctx context.Context, id int64) (domain.TransactionType, error) {
+func (repo TransactionTypeRepo) GetById(ctx context.Context, id int) (domain.TransactionType, error) {
 	e, err := repo.transactionTypeDao.GetById(ctx, id)
 	if err != nil {
 		return domain.TransactionType{}, err

@@ -10,7 +10,8 @@ create table currency
 
 comment on constraint check_code on currency is '3 letter uppercase';
 
-INSERT INTO currency (code, denominator) VALUES ('SGD', 100);
+INSERT INTO currency (code, denominator)
+VALUES ('SGD', 100);
 
 create table transaction_type
 (
@@ -65,9 +66,16 @@ create table transaction
 
 comment on column transaction.amount is 'Normalised to the lowest denominator';
 
-insert into transaction_type (name, multiplier, display_order, reply_text)
-values ('🟢 Income', 1, 1, 'You earned %s from %s'),
-       ('🔴 Spent', -1, 2, 'You spent %s on %s');
+create table message_context
+(
+    id      serial primary key,
+    message text not null
+);
+
+
+insert into transaction_type (id, name, multiplier, display_order, reply_text)
+values (2,'🟢 Income', 1, 1, 'You earned %s from %s'),
+       (1,'🔴 Spent', -1, 2, 'You spent %s on %s');
 
 insert into category (name, transaction_type_id)
 values ('Child', 1),

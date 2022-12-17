@@ -12,7 +12,7 @@ type User struct {
 }
 
 type Transaction struct {
-	Id          int64
+	Id          int
 	Datetime    time.Time
 	CategoryId  int
 	Description string
@@ -22,9 +22,9 @@ type Transaction struct {
 }
 
 type Category struct {
-	Id                int64
+	Id                int
 	Name              string
-	TransactionTypeId int64
+	TransactionTypeId int
 }
 
 type MonthlySummary struct {
@@ -35,8 +35,13 @@ type MonthlySummary struct {
 }
 
 type TransactionType struct {
-	Id         int64
+	Id         int
 	Name       string
 	Multiplier int
 	ReplyText  string
+}
+
+type MessageContext struct {
+	Id      int
+	Message string
 }

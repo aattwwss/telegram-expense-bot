@@ -14,7 +14,7 @@ func NewCategoryRepo(categoryDao dao.CategoryDAO) CategoryRepo {
 	return CategoryRepo{categoryDao: categoryDao}
 }
 
-func (repo CategoryRepo) FindByTransactionTypeId(ctx context.Context, transactionTypeId int64) ([]domain.Category, error) {
+func (repo CategoryRepo) FindByTransactionTypeId(ctx context.Context, transactionTypeId int) ([]domain.Category, error) {
 	var categories []domain.Category
 	entities, err := repo.categoryDao.FindByTransactionTypeId(ctx, transactionTypeId)
 	if err != nil {

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/Rhymond/go-money"
 	"github.com/aattwwss/telegram-expense-bot/domain"
+	"github.com/aattwwss/telegram-expense-bot/enum"
 	"github.com/aattwwss/telegram-expense-bot/message"
 	"github.com/aattwwss/telegram-expense-bot/repo"
 	"github.com/aattwwss/telegram-expense-bot/util"
@@ -19,7 +20,7 @@ const (
 	errorFindingUserMsg      = "Sorry there is a problem fetching your information.\n"
 	errorCreatingUserMsg     = "Sorry there is a problem signing you up.\n"
 	signUpSuccessMsg         = "Congratulations! We can get you started right away!\n"
-	helpMsg                  = "Type /start to register.\nType <category>, <price>, [date]\n"
+	helpMsg                  = "Type /start to register.\nType /stats to view your last 3 months expenses.\n\nStart recording your expenses by typing the amount you want to save, followed by the description.\n\ne.g. 12.34 Canned pasta"
 	cannotRecogniseAmountMsg = "I don't recognise that amount of money :(\n"
 
 	transactionHeaderHTMLMsg = "<b>Summary\n</b>"
@@ -29,16 +30,18 @@ const (
 
 type CommandHandler struct {
 	transactionRepo     repo.TransactionRepo
+	messageContextRepo  repo.MessageContextRepo
 	transactionTypeRepo repo.TransactionTypeRepo
 	categoryRepo        repo.CategoryRepo
 	statRepo            repo.StatRepo
 	userRepo            repo.UserRepo
 }
 
-func NewCommandHandler(userRepo repo.UserRepo, transactionRepo repo.TransactionRepo, transactionTypeRepo repo.TransactionTypeRepo, categoryRepo repo.CategoryRepo, statRepo repo.StatRepo) CommandHandler {
+func NewCommandHandler(userRepo repo.UserRepo, transactionRepo repo.TransactionRepo, messageContextRepo repo.MessageContextRepo, transactionTypeRepo repo.TransactionTypeRepo, categoryRepo repo.CategoryRepo, statRepo repo.StatRepo) CommandHandler {
 	return CommandHandler{
 		userRepo:            userRepo,
 		transactionRepo:     transactionRepo,
+		messageContextRepo:  messageContextRepo,
 		transactionTypeRepo: transactionTypeRepo,
 		categoryRepo:        categoryRepo,
 		statRepo:            statRepo,
@@ -87,7 +90,7 @@ func (handler CommandHandler) Help(ctx context.Context, msg *tgbotapi.MessageCon
 	return
 }
 
-func (handler CommandHandler) Transact(ctx context.Context, msg *tgbotapi.MessageConfig, update tgbotapi.Update) {
+func (handler CommandHandler) StartTransaction(ctx context.Context, msg *tgbotapi.MessageConfig, update tgbotapi.Update) {
 	userId := update.SentFrom().ID
 	user, err := handler.userRepo.FindUserById(ctx, userId)
 	if err != nil {
@@ -101,15 +104,25 @@ func (handler CommandHandler) Transact(ctx context.Context, msg *tgbotapi.Messag
 		return
 	}
 
-	float, err := strconv.ParseFloat(update.Message.Text, 64)
+	amountString, err := util.ParseFloatStringFromString(update.Message.Text)
+	if err != nil {
+		log.Error().Msgf("%v", err)
+		msg.Text = cannotRecogniseAmountMsg
+		return
+	}
+
+	float, err := strconv.ParseFloat(amountString, 64)
 	if err != nil {
 		msg.Text = cannotRecogniseAmountMsg
 		return
 	}
 
 	amount := money.NewFromFloat(float, user.Currency.Code)
-	amountPrecision := util.GetFloatFormatter(*amount.Currency())
-	msg.Text = fmt.Sprintf(message.TransactionTypeReplyMsg+amountPrecision, amount.AsMajorUnits())
+
+	if err != nil {
+		msg.Text = cannotRecogniseAmountMsg
+		return
+	}
 
 	transactionTypes, err := handler.transactionTypeRepo.GetAll(ctx)
 	if err != nil {
@@ -117,7 +130,20 @@ func (handler CommandHandler) Transact(ctx context.Context, msg *tgbotapi.Messag
 		return
 	}
 
-	msg.ReplyMarkup = tgbotapi.InlineKeyboardMarkup{InlineKeyboard: newTransactionTypesKeyboard(transactionTypes, transactionTypeInlineColSize)}
+	id, err := handler.messageContextRepo.Add(ctx, update.Message.Text)
+	if err != nil {
+		msg.Text = message.GenericErrReplyMsg
+		return
+	}
+
+	inlineKeyboard, err := newTransactionTypesKeyboard(transactionTypes, id, transactionTypeInlineColSize)
+	if err != nil {
+		msg.Text = message.GenericErrReplyMsg
+		return
+	}
+
+	msg.Text = fmt.Sprintf(message.TransactionTypeReplyMsg+"%v", amount.AsMajorUnits())
+	msg.ReplyMarkup = tgbotapi.InlineKeyboardMarkup{InlineKeyboard: inlineKeyboard}
 
 }
 
@@ -168,12 +194,25 @@ func (handler CommandHandler) Stats(ctx context.Context, msg *tgbotapi.MessageCo
 	return
 }
 
-func newTransactionTypesKeyboard(transactionTypes []domain.TransactionType, colSize int) [][]tgbotapi.InlineKeyboardButton {
+func newTransactionTypesKeyboard(transactionTypes []domain.TransactionType, messageContextId int, colSize int) ([][]tgbotapi.InlineKeyboardButton, error) {
 	var configs []util.InlineKeyboardConfig
 	for _, transactionType := range transactionTypes {
-		config := util.NewInlineKeyboardConfig(transactionType.Name, util.CallbackDataSerialize(transactionType, transactionType.Id))
+		data := domain.TransactionTypeCallback{
+			Callback: domain.Callback{
+				Type:             enum.TransactionType,
+				MessageContextId: messageContextId,
+			},
+			TransactionTypeId: transactionType.Id,
+		}
+
+		dataJson, err := util.ToJson(data)
+		if err != nil {
+			return nil, err
+		}
+
+		config := util.NewInlineKeyboardConfig(transactionType.Name, dataJson)
 		configs = append(configs, config)
 	}
 
-	return util.NewInlineKeyboard(configs, colSize, true)
+	return util.NewInlineKeyboard(configs, messageContextId, colSize, true), nil
 }

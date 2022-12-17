@@ -1,7 +1,7 @@
 package domain
 
 type TransactionType struct {
-	Id         int64
+	Id         int
 	Name       string
 	Multiplier int
 	ReplyText  string

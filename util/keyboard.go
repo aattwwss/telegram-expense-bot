@@ -1,6 +1,8 @@
 package util
 
 import (
+	"github.com/aattwwss/telegram-expense-bot/domain"
+	"github.com/aattwwss/telegram-expense-bot/enum"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"math"
 )
@@ -31,7 +33,7 @@ func NewInlineKeyboardConfig(label string, data string) InlineKeyboardConfig {
 	}
 }
 
-func NewInlineKeyboard(configs []InlineKeyboardConfig, colSize int, cancellable bool) [][]tgbotapi.InlineKeyboardButton {
+func NewInlineKeyboard(configs []InlineKeyboardConfig, messageContextId int, colSize int, cancellable bool) [][]tgbotapi.InlineKeyboardButton {
 	numOfRows := roundUpDivision(len(configs), colSize)
 	var itemsKeyboards [][]tgbotapi.InlineKeyboardButton
 
@@ -50,8 +52,15 @@ func NewInlineKeyboard(configs []InlineKeyboardConfig, colSize int, cancellable 
 	}
 
 	if cancellable {
+		cancelCallback := domain.GenericCallback{
+			Callback: domain.Callback{
+				Type:             enum.Cancel,
+				MessageContextId: messageContextId,
+			},
+		}
+		dataJson, _ := ToJson(cancelCallback)
 		row := tgbotapi.NewInlineKeyboardRow()
-		button := tgbotapi.NewInlineKeyboardButtonData("Cancel", "Cancel||cancel")
+		button := tgbotapi.NewInlineKeyboardButtonData("Cancel", dataJson)
 		row = append(row, button)
 		itemsKeyboards = append(itemsKeyboards, row)
 	}

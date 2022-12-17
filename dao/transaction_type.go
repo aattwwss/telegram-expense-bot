@@ -29,7 +29,7 @@ func (dao TransactionTypeDAO) GetAll(ctx context.Context) ([]*entity.Transaction
 	return types, nil
 }
 
-func (dao TransactionTypeDAO) GetById(ctx context.Context, id int64) (*entity.TransactionType, error) {
+func (dao TransactionTypeDAO) GetById(ctx context.Context, id int) (*entity.TransactionType, error) {
 	var types []*entity.TransactionType
 	sql := `
 			SELECT id, name, multiplier, reply_text
