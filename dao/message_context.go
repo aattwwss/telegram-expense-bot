@@ -41,3 +41,12 @@ func (dao MessageContextDAO) GetById(ctx context.Context, id int) (*entity.Messa
 	}
 	return &messageContextEntities[0], nil
 }
+
+func (dao MessageContextDAO) DeleteById(ctx context.Context, id int) error {
+	sql := `DELETE FROM message_context WHERE id = $1`
+	_, err := dao.db.Exec(ctx, sql, id)
+	if err != nil {
+		return err
+	}
+	return nil
+}

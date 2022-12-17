@@ -33,7 +33,7 @@ func NewInlineKeyboardConfig(label string, data string) InlineKeyboardConfig {
 	}
 }
 
-func NewInlineKeyboard(configs []InlineKeyboardConfig, colSize int, cancellable bool) [][]tgbotapi.InlineKeyboardButton {
+func NewInlineKeyboard(configs []InlineKeyboardConfig, messageContextId int, colSize int, cancellable bool) [][]tgbotapi.InlineKeyboardButton {
 	numOfRows := roundUpDivision(len(configs), colSize)
 	var itemsKeyboards [][]tgbotapi.InlineKeyboardButton
 
@@ -55,7 +55,7 @@ func NewInlineKeyboard(configs []InlineKeyboardConfig, colSize int, cancellable 
 		cancelCallback := domain.GenericCallback{
 			Callback: domain.Callback{
 				Type:             enum.Cancel,
-				MessageContextId: 0,
+				MessageContextId: messageContextId,
 			},
 		}
 		dataJson, _ := ToJson(cancelCallback)

@@ -216,5 +216,5 @@ func newTransactionTypesKeyboard(transactionTypes []domain.TransactionType, mess
 		configs = append(configs, config)
 	}
 
-	return util.NewInlineKeyboard(configs, colSize, true), nil
+	return util.NewInlineKeyboard(configs, messageContextId, colSize, true), nil
 }

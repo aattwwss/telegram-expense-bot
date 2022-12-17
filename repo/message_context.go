@@ -34,3 +34,11 @@ func (repo MessageContextRepo) GetMessageById(ctx context.Context, id int) (stri
 	}
 	return e.Message, nil
 }
+
+func (repo MessageContextRepo) DeleteById(ctx context.Context, id int) error {
+	err := repo.messageContextDAO.DeleteById(ctx, id)
+	if err != nil {
+		return err
+	}
+	return nil
+}

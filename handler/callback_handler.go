@@ -132,6 +132,22 @@ func (handler CallbackHandler) FromCategory(ctx context.Context, msg *tgbotapi.M
 	msg.Text = fmt.Sprintf(transactionType.ReplyText, moneyTransacted.Display(), category.Name)
 }
 
+func (handler CallbackHandler) FromCancel(ctx context.Context, msg *tgbotapi.MessageConfig, callbackQuery *tgbotapi.CallbackQuery) {
+
+	var genericCallback domain.GenericCallback
+	err := json.Unmarshal([]byte(callbackQuery.Data), &genericCallback)
+	if err != nil {
+		log.Error().Msgf("FromCancel unmarshall error: %v", err)
+		return
+	}
+
+	err = handler.messageContextRepo.DeleteById(ctx, genericCallback.MessageContextId)
+	if err != nil {
+		log.Error().Msgf("FromCancel delete message context error: %v", err)
+		return
+	}
+}
+
 func newCategoriesKeyboard(categories []domain.Category, messageContextId int, colSize int) ([][]tgbotapi.InlineKeyboardButton, error) {
 	var configs []util.InlineKeyboardConfig
 	for _, category := range categories {
@@ -152,6 +168,6 @@ func newCategoriesKeyboard(categories []domain.Category, messageContextId int, c
 		configs = append(configs, config)
 	}
 
-	return util.NewInlineKeyboard(configs, colSize, true), nil
+	return util.NewInlineKeyboard(configs, messageContextId, colSize, true), nil
 
 }

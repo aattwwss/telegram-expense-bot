@@ -54,6 +54,7 @@ func handleCallback(ctx context.Context, bot *tgbotapi.BotAPI, update tgbotapi.U
 	case "Category":
 		callbackHandler.FromCategory(ctx, &msg, update.CallbackQuery)
 	case "Cancel":
+		callbackHandler.FromCancel(ctx, &msg, update.CallbackQuery)
 		return
 	default:
 		log.Error().Msg("handleCallback error: unrecognised callback")
