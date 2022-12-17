@@ -76,6 +76,8 @@ func (handler CallbackHandler) FromCategory(ctx context.Context, msg *tgbotapi.M
 		return
 	}
 
+	defer handler.deleteMessageContext(ctx, categoryCallback.MessageContextId)
+
 	category, err := handler.categoryRepo.GetById(ctx, categoryCallback.CategoryId)
 	if err != nil {
 		log.Error().Msgf("Get category by id error: %v", err)
@@ -141,11 +143,7 @@ func (handler CallbackHandler) FromCancel(ctx context.Context, msg *tgbotapi.Mes
 		return
 	}
 
-	err = handler.messageContextRepo.DeleteById(ctx, genericCallback.MessageContextId)
-	if err != nil {
-		log.Error().Msgf("FromCancel delete message context error: %v", err)
-		return
-	}
+	handler.deleteMessageContext(ctx, genericCallback.MessageContextId)
 }
 
 func newCategoriesKeyboard(categories []domain.Category, messageContextId int, colSize int) ([][]tgbotapi.InlineKeyboardButton, error) {
@@ -170,4 +168,11 @@ func newCategoriesKeyboard(categories []domain.Category, messageContextId int, c
 
 	return util.NewInlineKeyboard(configs, messageContextId, colSize, true), nil
 
+}
+
+func (handler CallbackHandler) deleteMessageContext(ctx context.Context, id int) {
+	err := handler.messageContextRepo.DeleteById(ctx, id)
+	if err != nil {
+		log.Error().Msgf("deleteMessageContext error: %v", err)
+	}
 }
