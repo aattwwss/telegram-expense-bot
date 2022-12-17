@@ -26,7 +26,7 @@ func botSend(bot *tgbotapi.BotAPI, msg tgbotapi.MessageConfig) {
 	}
 }
 
-func decodeCallbackData(callbackData string) (string, error) {
+func getCallbackType(callbackData string) (string, error) {
 	var genericCallback domain.GenericCallback
 	err := json.Unmarshal([]byte(callbackData), &genericCallback)
 	if err != nil {
@@ -42,7 +42,7 @@ func handleCallback(ctx context.Context, bot *tgbotapi.BotAPI, update tgbotapi.U
 	}
 
 	msg := tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, "")
-	callbackType, err := decodeCallbackData(update.CallbackQuery.Data)
+	callbackType, err := getCallbackType(update.CallbackQuery.Data)
 	if err != nil {
 		msg.Text = message.GenericErrReplyMsg
 		botSend(bot, msg)
