@@ -10,7 +10,7 @@ type TransactionDAO struct {
 	db *pgxpool.Pool
 }
 
-func NewTransactionDAO(db *pgxpool.Pool) TransactionDAO {
+func NewTransactionDao(db *pgxpool.Pool) TransactionDAO {
 	return TransactionDAO{db: db}
 }
 

@@ -3,10 +3,10 @@ package main
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"github.com/aattwwss/telegram-expense-bot/config"
 	"github.com/aattwwss/telegram-expense-bot/dao"
 	"github.com/aattwwss/telegram-expense-bot/db"
+	"github.com/aattwwss/telegram-expense-bot/domain"
 	"github.com/aattwwss/telegram-expense-bot/handler"
 	"github.com/aattwwss/telegram-expense-bot/message"
 	"github.com/aattwwss/telegram-expense-bot/repo"
@@ -17,7 +17,6 @@ import (
 	"github.com/rs/zerolog/log"
 	"net/http"
 	"os"
-	"strings"
 	"time"
 )
 
@@ -27,12 +26,13 @@ func botSend(bot *tgbotapi.BotAPI, msg tgbotapi.MessageConfig) {
 	}
 }
 
-func decodeCallbackData(update tgbotapi.Update) (string, string, error) {
-	dataArr := strings.Split(update.CallbackQuery.Data, "||")
-	if len(dataArr) != 2 {
-		return "", "", errors.New("decodeCallbackData error")
+func decodeCallbackData(callbackData string) (string, error) {
+	var genericCallback domain.GenericCallback
+	err := json.Unmarshal([]byte(callbackData), &genericCallback)
+	if err != nil {
+		return "", err
 	}
-	return dataArr[0], dataArr[1], nil
+	return genericCallback.Type, nil
 }
 
 func handleCallback(ctx context.Context, bot *tgbotapi.BotAPI, update tgbotapi.Update, callbackHandler *handler.CallbackHandler) {
@@ -42,17 +42,17 @@ func handleCallback(ctx context.Context, bot *tgbotapi.BotAPI, update tgbotapi.U
 	}
 
 	msg := tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, "")
-	typeName, data, err := decodeCallbackData(update)
+	callbackType, err := decodeCallbackData(update.CallbackQuery.Data)
 	if err != nil {
 		msg.Text = message.GenericErrReplyMsg
 		botSend(bot, msg)
 	}
 
-	switch typeName {
+	switch callbackType {
 	case "TransactionType":
-		callbackHandler.FromTransactionType(ctx, &msg, update.CallbackQuery, data)
+		callbackHandler.FromTransactionType(ctx, &msg, update.CallbackQuery)
 	case "Category":
-		callbackHandler.FromCategory(ctx, &msg, update.CallbackQuery, data)
+		callbackHandler.FromCategory(ctx, &msg, update.CallbackQuery)
 	case "Cancel":
 		return
 	default:
@@ -79,7 +79,7 @@ func handleMessage(ctx context.Context, bot *tgbotapi.BotAPI, update tgbotapi.Up
 			commandHandler.Help(ctx, &msg, update)
 		}
 	} else {
-		commandHandler.Transact(ctx, &msg, update)
+		commandHandler.StartTransaction(ctx, &msg, update)
 	}
 	botSend(bot, msg)
 }
@@ -157,19 +157,21 @@ func main() {
 	dbLoaded, _ := db.LoadDB(ctx, cfg)
 
 	userDAO := dao.NewUserDao(dbLoaded)
-	transactionDAO := dao.NewTransactionDAO(dbLoaded)
-	transactionTypeDAO := dao.NewTransactionTypeDAO(dbLoaded)
+	transactionDao := dao.NewTransactionDao(dbLoaded)
+	messageContextDao := dao.NewMessageContextDao(dbLoaded)
+	transactionTypeDao := dao.NewTransactionTypeDAO(dbLoaded)
 	categoryDao := dao.NewCategoryDAO(dbLoaded)
 	statDao := dao.NewStatDAO(dbLoaded)
 
-	transactionRepo := repo.NewTransactionRepo(transactionDAO)
-	transactionTypeRepo := repo.NewTransactionTypeRepo(transactionTypeDAO)
+	transactionRepo := repo.NewTransactionRepo(transactionDao)
+	messageContextRepo := repo.NewMessageContextRepo(messageContextDao)
+	transactionTypeRepo := repo.NewTransactionTypeRepo(transactionTypeDao)
 	userRepo := repo.NewUserRepo(userDAO)
 	statRepo := repo.NewStatRepo(statDao)
 	categoryRepo := repo.NewCategoryRepo(categoryDao)
 
-	commandHandler := handler.NewCommandHandler(userRepo, transactionRepo, transactionTypeRepo, categoryRepo, statRepo)
-	callbackHandler := handler.NewCallbackHandler(userRepo, transactionRepo, transactionTypeRepo, categoryRepo)
+	commandHandler := handler.NewCommandHandler(userRepo, transactionRepo, messageContextRepo, transactionTypeRepo, categoryRepo, statRepo)
+	callbackHandler := handler.NewCallbackHandler(userRepo, transactionRepo, messageContextRepo, transactionTypeRepo, categoryRepo)
 
 	bot, err := tgbotapi.NewBotAPI(cfg.TelegramApiToken)
 	if err != nil {

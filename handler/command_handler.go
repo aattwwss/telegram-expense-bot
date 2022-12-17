@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/Rhymond/go-money"
 	"github.com/aattwwss/telegram-expense-bot/domain"
+	"github.com/aattwwss/telegram-expense-bot/enum"
 	"github.com/aattwwss/telegram-expense-bot/message"
 	"github.com/aattwwss/telegram-expense-bot/repo"
 	"github.com/aattwwss/telegram-expense-bot/util"
@@ -12,7 +13,6 @@ import (
 	"github.com/rs/zerolog/log"
 	"regexp"
 	"strconv"
-	"strings"
 	"time"
 )
 
@@ -33,16 +33,18 @@ var floatParser = regexp.MustCompile(`-?\d[\d,]*[.]?[\d{2}]*`)
 
 type CommandHandler struct {
 	transactionRepo     repo.TransactionRepo
+	messageContextRepo  repo.MessageContextRepo
 	transactionTypeRepo repo.TransactionTypeRepo
 	categoryRepo        repo.CategoryRepo
 	statRepo            repo.StatRepo
 	userRepo            repo.UserRepo
 }
 
-func NewCommandHandler(userRepo repo.UserRepo, transactionRepo repo.TransactionRepo, transactionTypeRepo repo.TransactionTypeRepo, categoryRepo repo.CategoryRepo, statRepo repo.StatRepo) CommandHandler {
+func NewCommandHandler(userRepo repo.UserRepo, transactionRepo repo.TransactionRepo, messageContextRepo repo.MessageContextRepo, transactionTypeRepo repo.TransactionTypeRepo, categoryRepo repo.CategoryRepo, statRepo repo.StatRepo) CommandHandler {
 	return CommandHandler{
 		userRepo:            userRepo,
 		transactionRepo:     transactionRepo,
+		messageContextRepo:  messageContextRepo,
 		transactionTypeRepo: transactionTypeRepo,
 		categoryRepo:        categoryRepo,
 		statRepo:            statRepo,
@@ -91,7 +93,7 @@ func (handler CommandHandler) Help(ctx context.Context, msg *tgbotapi.MessageCon
 	return
 }
 
-func (handler CommandHandler) Transact(ctx context.Context, msg *tgbotapi.MessageConfig, update tgbotapi.Update) {
+func (handler CommandHandler) StartTransaction(ctx context.Context, msg *tgbotapi.MessageConfig, update tgbotapi.Update) {
 	userId := update.SentFrom().ID
 	user, err := handler.userRepo.FindUserById(ctx, userId)
 	if err != nil {
@@ -105,16 +107,12 @@ func (handler CommandHandler) Transact(ctx context.Context, msg *tgbotapi.Messag
 		return
 	}
 
-	matches := floatParser.FindAllString(update.Message.Text, -1)
-	if len(matches) == 0 {
+	amountString, err := util.ParseFloatStringFromString(update.Message.Text)
+	if err != nil {
+		log.Error().Msgf("%v", err)
 		msg.Text = cannotRecogniseAmountMsg
 		return
 	}
-
-	amountString := matches[0]
-	description := strings.TrimSpace(util.After(update.Message.Text, amountString))
-
-	log.Info().Msgf("Description: %s", description)
 
 	float, err := strconv.ParseFloat(amountString, 64)
 	if err != nil {
@@ -123,7 +121,10 @@ func (handler CommandHandler) Transact(ctx context.Context, msg *tgbotapi.Messag
 	}
 
 	amount := money.NewFromFloat(float, user.Currency.Code)
-	msg.Text = fmt.Sprintf(message.TransactionTypeReplyMsg+"%v", amount.AsMajorUnits())
+	if err != nil {
+		msg.Text = cannotRecogniseAmountMsg
+		return
+	}
 
 	transactionTypes, err := handler.transactionTypeRepo.GetAll(ctx)
 	if err != nil {
@@ -131,7 +132,20 @@ func (handler CommandHandler) Transact(ctx context.Context, msg *tgbotapi.Messag
 		return
 	}
 
-	msg.ReplyMarkup = tgbotapi.InlineKeyboardMarkup{InlineKeyboard: newTransactionTypesKeyboard(transactionTypes, transactionTypeInlineColSize)}
+	id, err := handler.messageContextRepo.Add(ctx, update.Message.Text)
+	if err != nil {
+		msg.Text = message.GenericErrReplyMsg
+		return
+	}
+
+	inlineKeyboard, err := newTransactionTypesKeyboard(transactionTypes, id, transactionTypeInlineColSize)
+	if err != nil {
+		msg.Text = message.GenericErrReplyMsg
+		return
+	}
+
+	msg.Text = fmt.Sprintf(message.TransactionTypeReplyMsg+"%v", amount.AsMajorUnits())
+	msg.ReplyMarkup = tgbotapi.InlineKeyboardMarkup{InlineKeyboard: inlineKeyboard}
 
 }
 
@@ -182,12 +196,25 @@ func (handler CommandHandler) Stats(ctx context.Context, msg *tgbotapi.MessageCo
 	return
 }
 
-func newTransactionTypesKeyboard(transactionTypes []domain.TransactionType, colSize int) [][]tgbotapi.InlineKeyboardButton {
+func newTransactionTypesKeyboard(transactionTypes []domain.TransactionType, messageContextId int, colSize int) ([][]tgbotapi.InlineKeyboardButton, error) {
 	var configs []util.InlineKeyboardConfig
 	for _, transactionType := range transactionTypes {
-		config := util.NewInlineKeyboardConfig(transactionType.Name, util.CallbackDataSerialize(transactionType, transactionType.Id))
+		data := domain.TransactionTypeCallback{
+			Callback: domain.Callback{
+				Type:             enum.TransactionType,
+				MessageContextId: messageContextId,
+			},
+			TransactionTypeId: transactionType.Id,
+		}
+
+		dataJson, err := util.ToJson(data)
+		if err != nil {
+			return nil, err
+		}
+
+		config := util.NewInlineKeyboardConfig(transactionType.Name, dataJson)
 		configs = append(configs, config)
 	}
 
-	return util.NewInlineKeyboard(configs, colSize, true)
+	return util.NewInlineKeyboard(configs, colSize, true), nil
 }

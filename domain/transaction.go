@@ -6,7 +6,7 @@ import (
 )
 
 type Transaction struct {
-	Id          int64
+	Id          int
 	Datetime    time.Time
 	CategoryId  int
 	Description string

@@ -1,15 +1,20 @@
 package domain
 
 type Callback struct {
-	TypeName string
+	Type             string `json:"t,omitempty"`
+	MessageContextId int    `json:"mc,omitempty"`
+}
+
+type GenericCallback struct {
+	Callback `json:"c"`
 }
 
 type TransactionTypeCallback struct {
-	Callback
-	TransactionId int
+	Callback          `json:"c"`
+	TransactionTypeId int `json:"id,omitempty"`
 }
 
 type CategoryCallback struct {
-	TransactionTypeCallback
-	CategoryId int
+	Callback   `json:"c"`
+	CategoryId int `json:"id,omitempty"`
 }

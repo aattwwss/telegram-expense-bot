@@ -2,16 +2,17 @@ package handler
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"github.com/Rhymond/go-money"
 	"github.com/aattwwss/telegram-expense-bot/domain"
+	"github.com/aattwwss/telegram-expense-bot/enum"
 	"github.com/aattwwss/telegram-expense-bot/message"
 	"github.com/aattwwss/telegram-expense-bot/repo"
 	"github.com/aattwwss/telegram-expense-bot/util"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/rs/zerolog/log"
 	"strconv"
-	"strings"
 	"time"
 )
 
@@ -22,73 +23,94 @@ const (
 type CallbackHandler struct {
 	userRepo            repo.UserRepo
 	transactionRepo     repo.TransactionRepo
+	messageContextRepo  repo.MessageContextRepo
 	transactionTypeRepo repo.TransactionTypeRepo
 	categoryRepo        repo.CategoryRepo
 }
 
-func NewCallbackHandler(userRepo repo.UserRepo, transactionRepo repo.TransactionRepo, transactionTypeRepo repo.TransactionTypeRepo, categoryRepo repo.CategoryRepo) CallbackHandler {
+func NewCallbackHandler(userRepo repo.UserRepo, transactionRepo repo.TransactionRepo, messageContextRepo repo.MessageContextRepo, transactionTypeRepo repo.TransactionTypeRepo, categoryRepo repo.CategoryRepo) CallbackHandler {
 	return CallbackHandler{
 		userRepo:            userRepo,
 		transactionRepo:     transactionRepo,
+		messageContextRepo:  messageContextRepo,
 		transactionTypeRepo: transactionTypeRepo,
 		categoryRepo:        categoryRepo,
 	}
 }
 
-func (handler CallbackHandler) FromTransactionType(ctx context.Context, msg *tgbotapi.MessageConfig, callbackQuery *tgbotapi.CallbackQuery, data string) {
-	text := callbackQuery.Message.Text
+func (handler CallbackHandler) FromTransactionType(ctx context.Context, msg *tgbotapi.MessageConfig, callbackQuery *tgbotapi.CallbackQuery) {
 
-	transactionTypeId, err := strconv.ParseInt(data, 10, 64)
+	var transactionTypeCallback domain.TransactionTypeCallback
+	err := json.Unmarshal([]byte(callbackQuery.Data), &transactionTypeCallback)
 	if err != nil {
-		log.Error().Msgf("FromTransactionType error: %v", err)
+		log.Error().Msgf("FromTransactionType unmarshall error: %v", err)
 		msg.Text = message.GenericErrReplyMsg
 		return
 	}
 
-	categories, err := handler.categoryRepo.FindByTransactionTypeId(ctx, transactionTypeId)
+	categories, err := handler.categoryRepo.FindByTransactionTypeId(ctx, transactionTypeCallback.TransactionTypeId)
 	if err != nil {
-		log.Error().Msgf("%v", err)
+		log.Error().Msgf("FindByTransactionTypeId error: %v", err)
 		msg.Text = message.GenericErrReplyMsg
 		return
 	}
 
-	moneyAmount, err := parseMoneyFromCallback(text, message.TransactionTypeReplyMsg, money.SGD)
+	inlineKeyboard, err := newCategoriesKeyboard(categories, transactionTypeCallback.Callback.MessageContextId, categoriesInlineColSize)
 	if err != nil {
-		log.Error().Msgf("%v", err)
+		log.Error().Msgf("newCategoriesKeyboard error: %v", err)
 		msg.Text = message.GenericErrReplyMsg
 		return
 	}
 
-	msg.Text = fmt.Sprintf(message.TransactionReplyMsg+"%v", moneyAmount.AsMajorUnits())
-	msg.ReplyMarkup = tgbotapi.InlineKeyboardMarkup{InlineKeyboard: newCategoriesKeyboard(categories, categoriesInlineColSize)}
+	msg.Text = message.TransactionReplyMsg
+	msg.ReplyMarkup = tgbotapi.InlineKeyboardMarkup{InlineKeyboard: inlineKeyboard}
 
 }
 
-func (handler CallbackHandler) FromCategory(ctx context.Context, msg *tgbotapi.MessageConfig, callbackQuery *tgbotapi.CallbackQuery, data string) {
-	text := callbackQuery.Message.Text
+func (handler CallbackHandler) FromCategory(ctx context.Context, msg *tgbotapi.MessageConfig, callbackQuery *tgbotapi.CallbackQuery) {
+	var categoryCallback domain.CategoryCallback
+	err := json.Unmarshal([]byte(callbackQuery.Data), &categoryCallback)
+	if err != nil {
+		log.Error().Msgf("FromCategory unmarshall error: %v", err)
+		msg.Text = message.GenericErrReplyMsg
+		return
+	}
 
-	categoryId, err := strconv.Atoi(data)
+	category, err := handler.categoryRepo.GetById(ctx, categoryCallback.CategoryId)
 	if err != nil {
-		log.Error().Msgf("FromCategory error: %v", err)
+		log.Error().Msgf("Get category by id error: %v", err)
 		msg.Text = message.GenericErrReplyMsg
 		return
 	}
-	category, err := handler.categoryRepo.GetById(ctx, categoryId)
+
+	messageContext, err := handler.messageContextRepo.GetMessageById(ctx, categoryCallback.Callback.MessageContextId)
+	if err != nil {
+		log.Error().Msgf("Get message context by id error: %v", err)
+		msg.Text = message.GenericErrReplyMsg
+		return
+	}
+
+	amountString, err := util.ParseFloatStringFromString(messageContext)
+	if err != nil {
+		log.Error().Msgf("%v", err)
+		msg.Text = message.GenericErrReplyMsg
+		return
+	}
+
+	amountFloat, err := strconv.ParseFloat(amountString, 64)
 	if err != nil {
 		msg.Text = message.GenericErrReplyMsg
 		return
 	}
-	moneyTransacted, err := parseMoneyFromCallback(text, message.TransactionReplyMsg, money.SGD)
-	if err != nil {
-		log.Error().Msgf("FromCategory error: %v", err)
-		msg.Text = message.GenericErrReplyMsg
-		return
-	}
+
+	description := util.After(messageContext, amountString)
+
+	moneyTransacted := money.NewFromFloat(amountFloat, money.SGD)
 
 	transaction := domain.Transaction{
 		Datetime:    time.Now(),
-		CategoryId:  categoryId,
-		Description: "",
+		CategoryId:  category.Id,
+		Description: description,
 		UserId:      callbackQuery.From.ID,
 		Amount:      moneyTransacted,
 	}
@@ -110,22 +132,26 @@ func (handler CallbackHandler) FromCategory(ctx context.Context, msg *tgbotapi.M
 	msg.Text = fmt.Sprintf(transactionType.ReplyText, moneyTransacted.Display(), category.Name)
 }
 
-func parseMoneyFromCallback(s string, msg string, currencyCode string) (*money.Money, error) {
-	floatString := strings.ReplaceAll(s, msg, "")
-	floatAmount, err := strconv.ParseFloat(floatString, 10)
-	if err != nil {
-		return nil, err
-	}
-	return money.NewFromFloat(floatAmount, currencyCode), nil
-}
-
-func newCategoriesKeyboard(categories []domain.Category, colSize int) [][]tgbotapi.InlineKeyboardButton {
+func newCategoriesKeyboard(categories []domain.Category, messageContextId int, colSize int) ([][]tgbotapi.InlineKeyboardButton, error) {
 	var configs []util.InlineKeyboardConfig
 	for _, category := range categories {
-		config := util.NewInlineKeyboardConfig(category.Name, util.CallbackDataSerialize(category, category.Id))
+		data := domain.CategoryCallback{
+			Callback: domain.Callback{
+				Type:             enum.Category,
+				MessageContextId: messageContextId,
+			},
+			CategoryId: category.Id,
+		}
+
+		dataJson, err := util.ToJson(data)
+		if err != nil {
+			return nil, err
+		}
+
+		config := util.NewInlineKeyboardConfig(category.Name, dataJson)
 		configs = append(configs, config)
 	}
 
-	return util.NewInlineKeyboard(configs, colSize, true)
+	return util.NewInlineKeyboard(configs, colSize, true), nil
 
 }

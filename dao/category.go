@@ -15,7 +15,7 @@ func NewCategoryDAO(db *pgxpool.Pool) CategoryDAO {
 	return CategoryDAO{db: db}
 }
 
-func (dao CategoryDAO) FindByTransactionTypeId(ctx context.Context, transactionTypeId int64) ([]*entity.Category, error) {
+func (dao CategoryDAO) FindByTransactionTypeId(ctx context.Context, transactionTypeId int) ([]*entity.Category, error) {
 	var categories []*entity.Category
 	sql := `
 			SELECT id, name, transaction_type_id 
