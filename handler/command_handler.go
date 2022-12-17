@@ -118,6 +118,7 @@ func (handler CommandHandler) StartTransaction(ctx context.Context, msg *tgbotap
 	}
 
 	amount := money.NewFromFloat(float, user.Currency.Code)
+
 	if err != nil {
 		msg.Text = cannotRecogniseAmountMsg
 		return

@@ -64,7 +64,6 @@ func (handler CallbackHandler) FromTransactionType(ctx context.Context, msg *tgb
 
 	msg.Text = message.TransactionReplyMsg
 	msg.ReplyMarkup = tgbotapi.InlineKeyboardMarkup{InlineKeyboard: inlineKeyboard}
-
 }
 
 func (handler CallbackHandler) FromCategory(ctx context.Context, msg *tgbotapi.MessageConfig, callbackQuery *tgbotapi.CallbackQuery) {

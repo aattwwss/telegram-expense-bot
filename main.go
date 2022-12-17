@@ -3,6 +3,12 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"errors"
+	"net/http"
+	"os"
+	"strings"
+	"time"
+
 	"github.com/aattwwss/telegram-expense-bot/config"
 	"github.com/aattwwss/telegram-expense-bot/dao"
 	"github.com/aattwwss/telegram-expense-bot/db"
@@ -15,9 +21,7 @@ import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/joho/godotenv"
 	"github.com/rs/zerolog/log"
-	"net/http"
-	"os"
-	"time"
+
 )
 
 func botSend(bot *tgbotapi.BotAPI, msg tgbotapi.MessageConfig) {
