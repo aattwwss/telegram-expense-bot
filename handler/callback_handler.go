@@ -62,7 +62,7 @@ func (handler CallbackHandler) FromTransactionType(ctx context.Context, msg *tgb
 		return
 	}
 
-	msg.Text = message.TransactionReplyMsg
+	msg.Text = message.TransactionStartReplyMsg
 	msg.ReplyMarkup = tgbotapi.InlineKeyboardMarkup{InlineKeyboard: inlineKeyboard}
 }
 
@@ -130,7 +130,10 @@ func (handler CallbackHandler) FromCategory(ctx context.Context, msg *tgbotapi.M
 		return
 	}
 
-	msg.Text = fmt.Sprintf(transactionType.ReplyText, moneyTransacted.Display(), category.Name)
+	text := fmt.Sprintf(transactionType.ReplyText, moneyTransacted.Display(), category.Name) + "\n"
+	text += fmt.Sprintf(message.TransactionEndReplayMsg, description)
+	msg.Text = text
+	msg.ParseMode = tgbotapi.ModeHTML
 }
 
 func (handler CallbackHandler) FromCancel(ctx context.Context, msg *tgbotapi.MessageConfig, callbackQuery *tgbotapi.CallbackQuery) {

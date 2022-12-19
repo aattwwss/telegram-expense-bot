@@ -74,8 +74,8 @@ create table message_context
 
 
 insert into transaction_type (id, name, multiplier, display_order, reply_text)
-values (2,'🟢 Income', 1, 1, 'You earned %s from %s'),
-       (1,'🔴 Spent', -1, 2, 'You spent %s on %s');
+values (2,'🟢 Income', 1, 1, 'You earned <b>%s</b> from <b>%s</b>'),
+       (1,'🔴 Spent', -1, 2, 'You spent <b>%s</b> on <b>%s</b>');
 
 insert into category (name, transaction_type_id)
 values ('Child', 1),
