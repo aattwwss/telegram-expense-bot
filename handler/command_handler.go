@@ -88,6 +88,11 @@ func (handler CommandHandler) Help(ctx context.Context, msg *tgbotapi.MessageCon
 	return
 }
 
+func (handler CommandHandler) Undo(ctx context.Context, msg *tgbotapi.MessageConfig, update tgbotapi.Update) {
+	msg.Text = message.WorkInProgressMsg
+	return
+}
+
 func (handler CommandHandler) StartTransaction(ctx context.Context, msg *tgbotapi.MessageConfig, update tgbotapi.Update) {
 	userId := update.SentFrom().ID
 	user, err := handler.userRepo.FindUserById(ctx, userId)
