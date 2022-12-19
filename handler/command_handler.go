@@ -2,7 +2,6 @@ package handler
 
 import (
 	"context"
-	"fmt"
 	"github.com/Rhymond/go-money"
 	"github.com/aattwwss/telegram-expense-bot/domain"
 	"github.com/aattwwss/telegram-expense-bot/enum"
@@ -11,7 +10,6 @@ import (
 	"github.com/aattwwss/telegram-expense-bot/util"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/rs/zerolog/log"
-	"strconv"
 	"time"
 )
 
@@ -104,22 +102,9 @@ func (handler CommandHandler) StartTransaction(ctx context.Context, msg *tgbotap
 		return
 	}
 
-	amountString, err := util.ParseFloatStringFromString(update.Message.Text)
+	_, err = util.ParseFloatStringFromString(update.Message.Text)
 	if err != nil {
 		log.Error().Msgf("%v", err)
-		msg.Text = cannotRecogniseAmountMsg
-		return
-	}
-
-	float, err := strconv.ParseFloat(amountString, 64)
-	if err != nil {
-		msg.Text = cannotRecogniseAmountMsg
-		return
-	}
-
-	amount := money.NewFromFloat(float, user.Currency.Code)
-
-	if err != nil {
 		msg.Text = cannotRecogniseAmountMsg
 		return
 	}
@@ -142,7 +127,7 @@ func (handler CommandHandler) StartTransaction(ctx context.Context, msg *tgbotap
 		return
 	}
 
-	msg.Text = fmt.Sprintf(message.TransactionTypeReplyMsg+"%v", amount.AsMajorUnits())
+	msg.Text = message.TransactionTypeReplyMsg
 	msg.ReplyMarkup = tgbotapi.InlineKeyboardMarkup{InlineKeyboard: inlineKeyboard}
 
 }
