@@ -4,6 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strconv"
+	"time"
+
 	"github.com/Rhymond/go-money"
 	"github.com/aattwwss/telegram-expense-bot/domain"
 	"github.com/aattwwss/telegram-expense-bot/enum"
@@ -12,8 +15,6 @@ import (
 	"github.com/aattwwss/telegram-expense-bot/util"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/rs/zerolog/log"
-	"strconv"
-	"time"
 )
 
 const (
@@ -131,7 +132,7 @@ func (handler CallbackHandler) FromCategory(ctx context.Context, msg *tgbotapi.M
 	}
 
 	text := fmt.Sprintf(transactionType.ReplyText, moneyTransacted.Display(), category.Name) + "\n"
-	text += fmt.Sprintf(message.TransactionEndReplayMsg, description)
+	text += fmt.Sprintf(message.TransactionEndReplyMsg, description)
 	msg.Text = text
 	msg.ParseMode = tgbotapi.ModeHTML
 }
