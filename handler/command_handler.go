@@ -2,6 +2,9 @@ package handler
 
 import (
 	"context"
+	"fmt"
+	"time"
+
 	"github.com/Rhymond/go-money"
 	"github.com/aattwwss/telegram-expense-bot/domain"
 	"github.com/aattwwss/telegram-expense-bot/enum"
@@ -10,7 +13,6 @@ import (
 	"github.com/aattwwss/telegram-expense-bot/util"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/rs/zerolog/log"
-	"time"
 )
 
 const (
@@ -89,7 +91,24 @@ func (handler CommandHandler) Help(ctx context.Context, msg *tgbotapi.MessageCon
 }
 
 func (handler CommandHandler) Undo(ctx context.Context, msg *tgbotapi.MessageConfig, update tgbotapi.Update) {
-	msg.Text = message.WorkInProgressMsg
+	userId := update.Message.From.ID
+	latestTransaction, err := handler.transactionRepo.FindLastestByUserId(ctx, userId)
+	if err != nil {
+		log.Error().Msgf("Error finding latest transaction: %v", err)
+		msg.Text = message.GenericErrReplyMsg
+		return
+	}
+	if latestTransaction == nil {
+		msg.Text = message.TransactionLatestNotFound
+		return
+	}
+	err = handler.transactionRepo.DeleteById(ctx, latestTransaction.Id, userId)
+	if err != nil {
+		log.Error().Msgf("Error deleting latest transaction: %v", err)
+		msg.Text = message.GenericErrReplyMsg
+		return
+	}
+	msg.Text = fmt.Sprintf(message.TransactionDeletedReplyMsg, latestTransaction.Amount.Display(), latestTransaction.Description)
 	return
 }
 

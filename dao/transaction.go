@@ -2,6 +2,7 @@ package dao
 
 import (
 	"context"
+
 	"github.com/aattwwss/telegram-expense-bot/entity"
 	"github.com/georgysavva/scany/v2/pgxscan"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -30,7 +31,7 @@ func (dao TransactionDAO) GetById(ctx context.Context, id int, userId int64) (en
 
 }
 
-func (dao TransactionDAO) GetLatestByUserId(ctx context.Context, userId int64) (entity.Transaction, error) {
+func (dao TransactionDAO) FindLatestByUserId(ctx context.Context, userId int64) (*entity.Transaction, error) {
 	var transactions []*entity.Transaction
 	sql := `
 			SELECT id, datetime, category_id, description, user_id, amount, currency 
@@ -40,9 +41,12 @@ func (dao TransactionDAO) GetLatestByUserId(ctx context.Context, userId int64) (
 			`
 	err := pgxscan.Select(ctx, dao.db, &transactions, sql, userId)
 	if err != nil {
-		return entity.Transaction{}, err
+		return nil, err
 	}
-	return *transactions[0], nil
+	if len(transactions) == 0 {
+		return nil, nil
+	}
+	return transactions[0], nil
 
 }
 
