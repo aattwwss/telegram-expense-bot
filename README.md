@@ -11,7 +11,7 @@ This bot does not store any personal information other than your telegram user i
 - [x] Implement expense and income command
   - [x] Enter value -> choose expense / income -> choose category
 - [ ] CRUD-ish functionalities
-  - [ ] Delete last entry by using /undo command
+  - [x] Delete last entry by using /undo command
   - [ ] View transactions by using /list command (UX tbd)
 - [ ] ~~Parse callback amount using regex , so i can use actual currency value instead of just the float amount~~
 - [ ] User preference menu (currency and timezone)
