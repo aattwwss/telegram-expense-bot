@@ -3,6 +3,7 @@ package handler
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/Rhymond/go-money"
@@ -22,6 +23,7 @@ const (
 	signUpSuccessMsg         = "Congratulations! We can get you started right away!\n"
 	helpMsg                  = "Type /start to register.\nType /stats to view your last 3 months expenses.\n\nStart recording your expenses by typing the amount you want to save, followed by the description.\n\ne.g. 12.34 Canned pasta"
 	cannotRecogniseAmountMsg = "I don't recognise that amount of money :(\n"
+	descriptionTooLong       = "Sorry, your description is too long :(\n"
 
 	transactionHeaderHTMLMsg = "<b>Summary\n</b>"
 
@@ -67,11 +69,12 @@ func (handler CommandHandler) Start(ctx context.Context, msg *tgbotapi.MessageCo
 	}
 
 	defaultLocation, _ := time.LoadLocation("Asia/Singapore")
+	defaultCurrency := money.GetCurrency(money.SGD)
 
 	user := domain.User{
 		Id:       teleUser.ID,
 		Locale:   "en",
-		Currency: money.GetCurrency(money.SGD),
+		Currency: defaultCurrency,
 		Location: defaultLocation,
 	}
 
@@ -126,10 +129,16 @@ func (handler CommandHandler) StartTransaction(ctx context.Context, msg *tgbotap
 		return
 	}
 
-	_, err = util.ParseFloatStringFromString(update.Message.Text)
+	floatString, err := util.ParseFloatStringFromString(update.Message.Text)
 	if err != nil {
 		log.Error().Msgf("%v", err)
 		msg.Text = cannotRecogniseAmountMsg
+		return
+	}
+
+	desc := util.After(update.Message.Text, floatString)
+	if len(strings.TrimSpace(desc)) > 255 {
+		msg.Text = descriptionTooLong
 		return
 	}
 
