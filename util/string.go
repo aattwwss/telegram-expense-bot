@@ -2,13 +2,14 @@ package util
 
 import "strings"
 
-func After(value string, a string) string {
+// After returns the substring after the first instance of the key
+func After(value string, key string) string {
 	// Get substring after a string.
-	pos := strings.LastIndex(value, a)
+	pos := strings.Index(value, key)
 	if pos == -1 {
 		return ""
 	}
-	adjustedPos := pos + len(a)
+	adjustedPos := pos + len(key)
 	if adjustedPos >= len(value) {
 		return ""
 	}
