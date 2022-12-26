@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/Rhymond/go-money"
@@ -77,7 +78,8 @@ func (handler CallbackHandler) FromCategory(ctx context.Context, msg *tgbotapi.M
 		return
 	}
 
-	description := util.After(messageContext, amountString)
+	stringAfter := util.After(messageContext, amountString)
+	description := strings.TrimSpace(stringAfter)
 
 	moneyTransacted := money.NewFromFloat(amountFloat, money.SGD)
 
