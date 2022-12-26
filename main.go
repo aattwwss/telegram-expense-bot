@@ -50,8 +50,6 @@ func handleCallback(ctx context.Context, bot *tgbotapi.BotAPI, update tgbotapi.U
 	}
 
 	switch callbackType {
-	case "TransactionType":
-		callbackHandler.FromTransactionType(ctx, &msg, update.CallbackQuery)
 	case "Category":
 		callbackHandler.FromCategory(ctx, &msg, update.CallbackQuery)
 	case "Cancel":
