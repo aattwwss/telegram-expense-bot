@@ -142,20 +142,22 @@ func (handler CommandHandler) StartTransaction(ctx context.Context, msg *tgbotap
 		return
 	}
 
-	transactionTypes, err := handler.transactionTypeRepo.GetAll(ctx)
+	contextId, err := handler.messageContextRepo.Add(ctx, update.Message.Text)
 	if err != nil {
 		msg.Text = message.GenericErrReplyMsg
 		return
 	}
 
-	id, err := handler.messageContextRepo.Add(ctx, update.Message.Text)
+	categories, err := handler.categoryRepo.FindAll(ctx)
 	if err != nil {
+		log.Error().Msgf("FindAll categories error: %v", err)
 		msg.Text = message.GenericErrReplyMsg
 		return
 	}
 
-	inlineKeyboard, err := newTransactionTypesKeyboard(transactionTypes, id, transactionTypeInlineColSize)
+	inlineKeyboard, err := newCategoriesKeyboard(categories, contextId, categoriesInlineColSize)
 	if err != nil {
+		log.Error().Msgf("newCategoriesKeyboard error: %v", err)
 		msg.Text = message.GenericErrReplyMsg
 		return
 	}
