@@ -136,8 +136,8 @@ func (handler CommandHandler) StartTransaction(ctx context.Context, msg *tgbotap
 		return
 	}
 
-	desc := util.After(update.Message.Text, floatString)
-	if len(strings.TrimSpace(desc)) > 255 {
+	stringAfter := util.After(update.Message.Text, floatString)
+	if len(strings.TrimSpace(stringAfter)) > 255 {
 		msg.Text = descriptionTooLong
 		return
 	}
