@@ -39,34 +39,6 @@ func NewCallbackHandler(userRepo repo.UserRepo, transactionRepo repo.Transaction
 	}
 }
 
-func (handler CallbackHandler) FromTransactionType(ctx context.Context, msg *tgbotapi.MessageConfig, callbackQuery *tgbotapi.CallbackQuery) {
-
-	var transactionTypeCallback domain.TransactionTypeCallback
-	err := json.Unmarshal([]byte(callbackQuery.Data), &transactionTypeCallback)
-	if err != nil {
-		log.Error().Msgf("FromTransactionType unmarshall error: %v", err)
-		msg.Text = message.GenericErrReplyMsg
-		return
-	}
-
-	categories, err := handler.categoryRepo.FindByTransactionTypeId(ctx, transactionTypeCallback.TransactionTypeId)
-	if err != nil {
-		log.Error().Msgf("FindByTransactionTypeId error: %v", err)
-		msg.Text = message.GenericErrReplyMsg
-		return
-	}
-
-	inlineKeyboard, err := newCategoriesKeyboard(categories, transactionTypeCallback.Callback.MessageContextId, categoriesInlineColSize)
-	if err != nil {
-		log.Error().Msgf("newCategoriesKeyboard error: %v", err)
-		msg.Text = message.GenericErrReplyMsg
-		return
-	}
-
-	msg.Text = message.TransactionStartReplyMsg
-	msg.ReplyMarkup = tgbotapi.InlineKeyboardMarkup{InlineKeyboard: inlineKeyboard}
-}
-
 func (handler CallbackHandler) FromCategory(ctx context.Context, msg *tgbotapi.MessageConfig, callbackQuery *tgbotapi.CallbackQuery) {
 	var categoryCallback domain.CategoryCallback
 	err := json.Unmarshal([]byte(callbackQuery.Data), &categoryCallback)
