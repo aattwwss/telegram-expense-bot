@@ -78,8 +78,8 @@ func (handler CallbackHandler) FromCategory(ctx context.Context, msg *tgbotapi.M
 		return
 	}
 
-	description := util.After(messageContext, amountString)
-	description = strings.TrimSpace(description)
+	stringAfter := util.After(messageContext, amountString)
+	description := strings.TrimSpace(stringAfter)
 
 	moneyTransacted := money.NewFromFloat(amountFloat, money.SGD)
 
