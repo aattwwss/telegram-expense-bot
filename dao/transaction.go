@@ -81,6 +81,7 @@ func (dao TransactionDAO) GetBreakDownByCategory(ctx context.Context, dateFrom s
 					 JOIN category c on t.category_id = c.id
 			WHERE t.datetime >= $1
 			  AND t.datetime < $2
+			  AND t.user_id = $3
 			GROUP BY c.name
 			ORDER BY amount DESC;	
 		`
