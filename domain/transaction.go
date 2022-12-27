@@ -1,8 +1,9 @@
 package domain
 
 import (
-	"github.com/Rhymond/go-money"
 	"time"
+
+	"github.com/Rhymond/go-money"
 )
 
 type Transaction struct {
@@ -12,4 +13,10 @@ type Transaction struct {
 	Description string
 	UserId      int64
 	Amount      *money.Money
+}
+
+type TransactionCategoryBreakdown struct {
+	CategoryName string
+	Amount       *money.Money
+	Percent      float64
 }

@@ -48,5 +48,5 @@ type MessageContext struct {
 
 type TransactionBreakdown struct {
 	CategoryName string
-	Amount       int
+	Amount       int64
 }
