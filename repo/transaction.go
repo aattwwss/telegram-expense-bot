@@ -88,17 +88,17 @@ func (repo TransactionRepo) DeleteById(ctx context.Context, id int, userId int64
 	return nil
 }
 
-func (repo TransactionRepo) GetTransactionBreakdownByCategory(ctx context.Context, month time.Month, year int, user domain.User) ([]domain.TransactionCategoryBreakdown, error) {
-	breakdowns := []domain.TransactionCategoryBreakdown{}
+func (repo TransactionRepo) GetTransactionBreakdownByCategory(ctx context.Context, month time.Month, year int, user domain.User) (domain.Breakdowns, error) {
+	breakdowns := domain.Breakdowns{}
 
-	dateFromString := fmt.Sprintf("%v-%v-01", year, int(month))
+	dateFromString := fmt.Sprintf("%v-%02d-01", year, int(month))
 	dateFrom, err := time.Parse("2006-01-02", dateFromString)
 
 	if err != nil {
 		return nil, err
 	}
 
-	dateTo := dateFrom.AddDate(0, 0, 1)
+	dateTo := dateFrom.AddDate(0, 1, 0)
 	dateToString := dateTo.Format("2006-01-02")
 
 	if err != nil {
@@ -113,10 +113,10 @@ func (repo TransactionRepo) GetTransactionBreakdownByCategory(ctx context.Contex
 	}
 
 	for _, e := range entities {
-		breakdown := domain.TransactionCategoryBreakdown{
+		breakdown := domain.Breakdown{
 			CategoryName: e.CategoryName,
 			Amount:       money.New(e.Amount, user.Currency.Code),
-			Percent:      float64(e.Amount) / float64(totalAmount),
+			Percent:      float64(e.Amount) / float64(totalAmount) * 100,
 		}
 		breakdowns = append(breakdowns, breakdown)
 	}

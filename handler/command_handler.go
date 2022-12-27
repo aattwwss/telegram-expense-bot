@@ -3,6 +3,7 @@ package handler
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 
@@ -25,7 +26,7 @@ const (
 	cannotRecogniseAmountMsg = "I don't recognise that amount of money :(\n"
 	descriptionTooLong       = "Sorry, your description is too long :(\n"
 
-	transactionHeaderHTMLMsg = "<b>Summary\n</b>"
+	transactionHeaderHTMLMsg = "<b>Summary\n\n</b>"
 
 	transactionTypeInlineColSize = 2
 )
@@ -175,41 +176,19 @@ func (handler CommandHandler) Stats(ctx context.Context, msg *tgbotapi.MessageCo
 		msg.Text = message.GenericErrReplyMsg
 		return
 	}
-	if user == nil {
-		log.Error().Msgf("User not found for stats: %v", userId)
-		msg.Text = message.GenericErrReplyMsg
-		return
-	}
 
-	now := time.Now()
-	monthTo := util.YearMonth{
-		Month: now.Month(),
-		Year:  now.Year(),
-	}
+	month, year := parseMonthYearFromStatsMessage(update.Message.Text)
 
-	from := now.AddDate(0, -2, 0)
-	monthFrom := util.YearMonth{
-		Month: from.Month(),
-		Year:  from.Year(),
-	}
+	breakdowns, err := handler.transactionRepo.GetTransactionBreakdownByCategory(ctx, month, year, *user)
 
-	param := repo.GetMonthlySearchParam{
-		Location:  *user.Location,
-		MonthFrom: monthFrom,
-		MonthTo:   monthTo,
-		UserId:    userId,
-	}
-
-	summaries, err := handler.statRepo.GetMonthly(ctx, param)
 	if err != nil {
-		log.Error().Msgf("%v", err)
+		log.Error().Msgf("Error getting breakdowns: %v", err)
 		msg.Text = message.GenericErrReplyMsg
 		return
 	}
 
-	msg.Text = transactionHeaderHTMLMsg
-	msg.Text += summaries.GenerateReportText()
-
+	log.Info().Msgf("breakdowns: %v", breakdowns)
+	msg.Text = transactionHeaderHTMLMsg + breakdowns.GetFormattedHTMLText()
 	msg.ParseMode = tgbotapi.ModeHTML
 	return
 }
@@ -235,4 +214,62 @@ func newTransactionTypesKeyboard(transactionTypes []domain.TransactionType, mess
 	}
 
 	return util.NewInlineKeyboard(configs, messageContextId, colSize, true), nil
+}
+
+func parseMonthYearFromStatsMessage(s string) (time.Month, int) {
+	now := time.Now()
+	month := now.Month()
+	year := now.Year()
+	arr := strings.Split(s, " ")
+	if len(arr) == 2 {
+		return parseMonthFromString(arr[1]), year
+	}
+	if len(arr) == 3 {
+		y, err := strconv.Atoi(arr[2])
+		if err != nil {
+			y = year
+		}
+		return parseMonthFromString(arr[1]), y
+	}
+	return month, year
+}
+
+func parseMonthFromString(s string) time.Month {
+	if s == "1" || strings.EqualFold(s, "jan") || strings.EqualFold(s, "january") {
+		return time.January
+	}
+	if s == "2" || strings.EqualFold(s, "feb") || strings.EqualFold(s, "february") {
+		return time.February
+	}
+	if s == "3" || strings.EqualFold(s, "mar") || strings.EqualFold(s, "march") {
+		return time.March
+	}
+	if s == "4" || strings.EqualFold(s, "apr") || strings.EqualFold(s, "april") {
+		return time.April
+	}
+	if s == "5" || strings.EqualFold(s, "may") || strings.EqualFold(s, "may") {
+		return time.May
+	}
+	if s == "6" || strings.EqualFold(s, "jun") || strings.EqualFold(s, "june") {
+		return time.June
+	}
+	if s == "7" || strings.EqualFold(s, "jul") || strings.EqualFold(s, "july") {
+		return time.July
+	}
+	if s == "8" || strings.EqualFold(s, "aug") || strings.EqualFold(s, "august") {
+		return time.August
+	}
+	if s == "9" || strings.EqualFold(s, "sep") || strings.EqualFold(s, "september") {
+		return time.September
+	}
+	if s == "10" || strings.EqualFold(s, "oct") || strings.EqualFold(s, "october") {
+		return time.October
+	}
+	if s == "11" || strings.EqualFold(s, "nov") || strings.EqualFold(s, "november") {
+		return time.November
+	}
+	if s == "12" || strings.EqualFold(s, "dec") || strings.EqualFold(s, "december") {
+		return time.December
+	}
+	return time.Now().Month()
 }
