@@ -28,7 +28,6 @@ func (dao TransactionDAO) GetById(ctx context.Context, id int, userId int64) (en
 		return entity.Transaction{}, err
 	}
 	return *transactions[0], nil
-
 }
 
 func (dao TransactionDAO) FindLatestByUserId(ctx context.Context, userId int64) (*entity.Transaction, error) {
@@ -72,4 +71,22 @@ func (dao TransactionDAO) DeleteById(ctx context.Context, id int, userId int64) 
 		return err
 	}
 	return nil
+}
+
+func (dao TransactionDAO) GetBreakDownByCategory(ctx context.Context, dateFrom string, dateTo string, userId int64) ([]entity.TransactionBreakdown, error) {
+	entities := []entity.TransactionBreakdown{}
+	sql := `
+			SELECT c.name, SUM(amount) amount
+			FROM expenditure_bot.transaction t
+					 JOIN category c on t.category_id = c.id
+			WHERE t.datetime >= $1
+			  AND t.datetime < $2
+			GROUP BY c.name
+			ORDER BY amount DESC;	
+		`
+	err := pgxscan.Select(ctx, dao.db, &entities, sql, dateFrom, dateTo, userId)
+	if err != nil {
+		return nil, err
+	}
+	return entities, nil
 }
