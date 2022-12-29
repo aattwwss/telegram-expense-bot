@@ -8,7 +8,7 @@ import (
 	"github.com/Rhymond/go-money"
 )
 
-const PercentCategoryAmountMsg = "<code>%s%.1f%% %s %s%s\n</code>"
+const PercentCategoryAmountMsg = "<code>%s%.1f%% %s %s%s\n</code>" // E.g. 82.8% Taxes    $1,234.00
 
 type Transaction struct {
 	Id          int

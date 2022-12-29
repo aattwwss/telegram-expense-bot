@@ -26,7 +26,7 @@ const (
 	cannotRecogniseAmountMsg = "I don't recognise that amount of money :(\n"
 	descriptionTooLong       = "Sorry, your description is too long :(\n"
 
-	transactionHeaderHTMLMsg = "<b>%s %v\n\n</b>"
+	transactionHeaderHTMLMsg = "<b>%s %v\n\n</b>" // E.g. November 2022
 
 	transactionTypeInlineColSize = 2
 )
