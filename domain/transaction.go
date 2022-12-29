@@ -8,6 +8,8 @@ import (
 	"github.com/Rhymond/go-money"
 )
 
+const PercentCategoryAmountMsg = "<code>%s%.1f%% %s %s%s\n</code>"
+
 type Transaction struct {
 	Id          int
 	Datetime    time.Time
@@ -36,15 +38,13 @@ func (bds Breakdowns) GetFormattedHTMLText() string {
 		}
 	}
 
-	template := "<code>%s%.1f%% %s %s%s\n</code>"
-
 	for _, b := range bds {
-		spacesToPadBeforePercent := " "
-		if b.Percent >= 10 {
-			spacesToPadBeforePercent = ""
+		spacesToPadBeforePercent := ""
+		if b.Percent < 10 {
+			spacesToPadBeforePercent = " "
 		}
 		spacesToPadAfterCategory := longest - len(b.CategoryName)
-		text += fmt.Sprintf(template, spacesToPadBeforePercent, b.Percent, b.CategoryName, strings.Repeat(" ", spacesToPadAfterCategory), b.Amount.Display())
+		text += fmt.Sprintf(PercentCategoryAmountMsg, spacesToPadBeforePercent, b.Percent, b.CategoryName, strings.Repeat(" ", spacesToPadAfterCategory), b.Amount.Display())
 	}
 	return text
 }

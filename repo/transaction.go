@@ -3,6 +3,7 @@ package repo
 import (
 	"context"
 	"fmt"
+	"math"
 	"time"
 
 	"github.com/Rhymond/go-money"
@@ -113,10 +114,11 @@ func (repo TransactionRepo) GetTransactionBreakdownByCategory(ctx context.Contex
 	}
 
 	for _, e := range entities {
+		percent := float64(e.Amount) / float64(totalAmount) * 100
 		breakdown := domain.Breakdown{
 			CategoryName: e.CategoryName,
 			Amount:       money.New(e.Amount, user.Currency.Code),
-			Percent:      float64(e.Amount) / float64(totalAmount) * 100,
+			Percent:      math.Round(percent*10) / 10,
 		}
 		breakdowns = append(breakdowns, breakdown)
 	}
