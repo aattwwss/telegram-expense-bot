@@ -3,6 +3,7 @@ package handler
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 
@@ -25,7 +26,7 @@ const (
 	cannotRecogniseAmountMsg = "I don't recognise that amount of money :(\n"
 	descriptionTooLong       = "Sorry, your description is too long :(\n"
 
-	transactionHeaderHTMLMsg = "<b>Summary\n</b>"
+	transactionHeaderHTMLMsg = "<b>%s %v\n\n</b>" // E.g. November 2022
 
 	transactionTypeInlineColSize = 2
 )
@@ -175,41 +176,19 @@ func (handler CommandHandler) Stats(ctx context.Context, msg *tgbotapi.MessageCo
 		msg.Text = message.GenericErrReplyMsg
 		return
 	}
-	if user == nil {
-		log.Error().Msgf("User not found for stats: %v", userId)
-		msg.Text = message.GenericErrReplyMsg
-		return
-	}
 
-	now := time.Now()
-	monthTo := util.YearMonth{
-		Month: now.Month(),
-		Year:  now.Year(),
-	}
+	month, year := parseMonthYearFromStatsMessage(update.Message.Text)
 
-	from := now.AddDate(0, -2, 0)
-	monthFrom := util.YearMonth{
-		Month: from.Month(),
-		Year:  from.Year(),
-	}
+	breakdowns, err := handler.transactionRepo.GetTransactionBreakdownByCategory(ctx, month, year, *user)
 
-	param := repo.GetMonthlySearchParam{
-		Location:  *user.Location,
-		MonthFrom: monthFrom,
-		MonthTo:   monthTo,
-		UserId:    userId,
-	}
-
-	summaries, err := handler.statRepo.GetMonthly(ctx, param)
 	if err != nil {
-		log.Error().Msgf("%v", err)
+		log.Error().Msgf("Error getting breakdowns: %v", err)
 		msg.Text = message.GenericErrReplyMsg
 		return
 	}
 
-	msg.Text = transactionHeaderHTMLMsg
-	msg.Text += summaries.GenerateReportText()
-
+	header := fmt.Sprintf(transactionHeaderHTMLMsg, month.String(), year)
+	msg.Text = header + breakdowns.GetFormattedHTMLText()
 	msg.ParseMode = tgbotapi.ModeHTML
 	return
 }
@@ -235,4 +214,24 @@ func newTransactionTypesKeyboard(transactionTypes []domain.TransactionType, mess
 	}
 
 	return util.NewInlineKeyboard(configs, messageContextId, colSize, true), nil
+}
+
+// parseMonthYearFromStatsMessage returns the month and year representation from the string,
+// any error returns the current month or year
+func parseMonthYearFromStatsMessage(s string) (time.Month, int) {
+	now := time.Now()
+	month := now.Month()
+	year := now.Year()
+	arr := strings.Split(s, " ")
+	if len(arr) == 2 {
+		return util.ParseMonthFromString(arr[1]), year
+	}
+	if len(arr) == 3 {
+		y, err := strconv.Atoi(arr[2])
+		if err != nil {
+			y = year
+		}
+		return util.ParseMonthFromString(arr[1]), y
+	}
+	return month, year
 }

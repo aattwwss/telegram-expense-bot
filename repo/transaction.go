@@ -2,6 +2,9 @@ package repo
 
 import (
 	"context"
+	"fmt"
+	"math"
+	"time"
 
 	"github.com/Rhymond/go-money"
 	"github.com/aattwwss/telegram-expense-bot/dao"
@@ -84,4 +87,41 @@ func (repo TransactionRepo) DeleteById(ctx context.Context, id int, userId int64
 	}
 
 	return nil
+}
+
+func (repo TransactionRepo) GetTransactionBreakdownByCategory(ctx context.Context, month time.Month, year int, user domain.User) (domain.Breakdowns, error) {
+	breakdowns := domain.Breakdowns{}
+
+	dateFromString := fmt.Sprintf("%v-%02d-01", year, int(month))
+	dateFrom, err := time.Parse("2006-01-02", dateFromString)
+
+	if err != nil {
+		return nil, err
+	}
+
+	dateTo := dateFrom.AddDate(0, 1, 0)
+	dateToString := dateTo.Format("2006-01-02")
+
+	if err != nil {
+		return nil, err
+	}
+
+	entities, err := repo.transactionDao.GetBreakdownByCategory(ctx, dateFromString, dateToString, user.Id)
+	var totalAmount int64
+
+	for _, e := range entities {
+		totalAmount += e.Amount
+	}
+
+	for _, e := range entities {
+		percent := float64(e.Amount) / float64(totalAmount) * 100
+		breakdown := domain.Breakdown{
+			CategoryName: e.CategoryName,
+			Amount:       money.New(e.Amount, user.Currency.Code),
+			Percent:      math.Round(percent*10) / 10,
+		}
+		breakdowns = append(breakdowns, breakdown)
+	}
+
+	return breakdowns, nil
 }

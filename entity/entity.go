@@ -45,3 +45,8 @@ type MessageContext struct {
 	Id      int
 	Message string
 }
+
+type TransactionBreakdown struct {
+	CategoryName string
+	Amount       int64
+}

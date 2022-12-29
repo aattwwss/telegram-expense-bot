@@ -72,6 +72,18 @@ create table message_context
     message text not null
 );
 
+create view expenditure_bot.transaction_local_date as
+select t.id,
+       DATE(t.datetime AT TIME ZONE u.timezone),
+       c.name,
+       t.description,
+       t.user_id,
+       t.amount,
+       t.currency
+from expenditure_bot.transaction t
+         JOIN app_user u on u.id = t.user_id
+         JOIN category c on c.id = t.category_id;
+
 
 insert into transaction_type (id, name, multiplier, display_order, reply_text)
 values (1,'🔴 Spent', -1, 2, 'You spent <b>%s</b> on <b>%s</b>');
