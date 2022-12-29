@@ -74,18 +74,18 @@ func (dao TransactionDAO) DeleteById(ctx context.Context, id int, userId int64) 
 	return nil
 }
 
-func (dao TransactionDAO) GetBreakDownByCategory(ctx context.Context, dateFrom string, dateTo string, userId int64) ([]entity.TransactionBreakdown, error) {
+func (dao TransactionDAO) GetBreakdownByCategory(ctx context.Context, dateFrom string, dateTo string, userId int64) ([]entity.TransactionBreakdown, error) {
 	log.Info().Msgf("%s %s", dateFrom, dateTo)
-	entities := []entity.TransactionBreakdown{}
+	var entities []entity.TransactionBreakdown
 	sql := `
-			SELECT c.name category_name, SUM(amount) amount
-			FROM expenditure_bot.transaction t
-					 JOIN category c on t.category_id = c.id
-			WHERE t.datetime >= $1
-			  AND t.datetime < $2
-			  AND t.user_id = $3
-			GROUP BY c.name
-			ORDER BY amount DESC;	
+			SELECT name as     category_name,
+			       sum(amount) amount
+			FROM expenditure_bot.transaction_local_date
+			WHERE date >= $1
+			  AND date < $2
+			  AND user_id = $3
+			GROUP BY name
+			ORDER BY amount DESC;
 		`
 	err := pgxscan.Select(ctx, dao.db, &entities, sql, dateFrom, dateTo, userId)
 	if err != nil {

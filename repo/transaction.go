@@ -105,7 +105,7 @@ func (repo TransactionRepo) GetTransactionBreakdownByCategory(ctx context.Contex
 		return nil, err
 	}
 
-	entities, err := repo.transactionDao.GetBreakDownByCategory(ctx, dateFromString, dateToString, user.Id)
+	entities, err := repo.transactionDao.GetBreakdownByCategory(ctx, dateFromString, dateToString, user.Id)
 	var totalAmount int64
 
 	for _, e := range entities {
