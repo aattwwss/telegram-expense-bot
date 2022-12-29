@@ -6,7 +6,6 @@ import (
 	"github.com/aattwwss/telegram-expense-bot/entity"
 	"github.com/georgysavva/scany/v2/pgxscan"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/rs/zerolog/log"
 )
 
 type TransactionDAO struct {
@@ -75,7 +74,6 @@ func (dao TransactionDAO) DeleteById(ctx context.Context, id int, userId int64) 
 }
 
 func (dao TransactionDAO) GetBreakdownByCategory(ctx context.Context, dateFrom string, dateTo string, userId int64) ([]entity.TransactionBreakdown, error) {
-	log.Info().Msgf("%s %s", dateFrom, dateTo)
 	var entities []entity.TransactionBreakdown
 	sql := `
 			SELECT name as     category_name,
