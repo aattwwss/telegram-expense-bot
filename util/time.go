@@ -23,3 +23,44 @@ func (ym YearMonth) String(layout string) (string, error) {
 	layout = strings.ReplaceAll(layout, "01", fmt.Sprintf("%02d", ym.Month))
 	return layout, nil
 }
+
+// ParseMonthFromString trys to return the month given a string, else it returns the current month.
+func ParseMonthFromString(s string) time.Month {
+	if s == "1" || strings.EqualFold(s, "jan") || strings.EqualFold(s, "january") {
+		return time.January
+	}
+	if s == "2" || strings.EqualFold(s, "feb") || strings.EqualFold(s, "february") {
+		return time.February
+	}
+	if s == "3" || strings.EqualFold(s, "mar") || strings.EqualFold(s, "march") {
+		return time.March
+	}
+	if s == "4" || strings.EqualFold(s, "apr") || strings.EqualFold(s, "april") {
+		return time.April
+	}
+	if s == "5" || strings.EqualFold(s, "may") || strings.EqualFold(s, "may") {
+		return time.May
+	}
+	if s == "6" || strings.EqualFold(s, "jun") || strings.EqualFold(s, "june") {
+		return time.June
+	}
+	if s == "7" || strings.EqualFold(s, "jul") || strings.EqualFold(s, "july") {
+		return time.July
+	}
+	if s == "8" || strings.EqualFold(s, "aug") || strings.EqualFold(s, "august") {
+		return time.August
+	}
+	if s == "9" || strings.EqualFold(s, "sep") || strings.EqualFold(s, "september") {
+		return time.September
+	}
+	if s == "10" || strings.EqualFold(s, "oct") || strings.EqualFold(s, "october") {
+		return time.October
+	}
+	if s == "11" || strings.EqualFold(s, "nov") || strings.EqualFold(s, "november") {
+		return time.November
+	}
+	if s == "12" || strings.EqualFold(s, "dec") || strings.EqualFold(s, "december") {
+		return time.December
+	}
+	return time.Now().Month()
+}
