@@ -53,9 +53,7 @@ This bot does not store any personal information other than your telegram user i
 - [ ] CRUD-ish functionalities
   - [x] Delete last entry by using /undo command
   - [ ] View transactions by using /list command (UX tbd)
-- [ ] ~~Parse callback amount using regex , so i can use actual currency value instead of just the float amount~~
 - [ ] User preference menu (currency and timezone)
-  - [ ] ~~On /start allow user to choose their timezone~~
   - [ ] Make it customisable
 - [ ] Calculate transaction per month
   - [x] Return summary in text
@@ -71,10 +69,9 @@ This bot does not store any personal information other than your telegram user i
 
 # Dev / Infra 
 - [ ] Add CICD from github actions to deploy to remote server 
-  - [ ] ~~Build image -> deploy to docker hub -> trigger deployment in remote server~~
   - [ ] Pull from remote and build and run :(
 
 # Misc
-- [ ] Consolidate SQL to the latest schema
-- [ ] Prepare docker compose for self hosted guide
-- [ ] Prepare self hosted guide
+- [x] Consolidate SQL to the latest schema
+- [x] Prepare docker compose for self hosted guide
+- [x] Prepare self hosted guide
