@@ -45,31 +45,19 @@ This bot does not store any personal information other than your telegram user i
 
 # Features
 - [x] Sign up as a new user from new chat with bot
-  - [x] How to determine a new user is using it for the first time? Use /start to check? Use the user in db to check
--[x] Add a transaction as current user
-  - [x] Selection of category 
-- [x] Implement expense and income command
-  - [x] Enter value -> choose expense / income -> choose category
-- [ ] CRUD-ish functionalities
-  - [x] Delete last entry by using /undo command
-  - [ ] View transactions by using /list command (UX tbd)
-- [ ] User preference menu (currency and timezone)
-  - [ ] Make it customisable
-- [ ] Calculate transaction per month
-  - [x] Return summary in text
-    - [x] Triggered from /stats, default fetch from last 3 months.
-    - [x] /stats month year 
-    - [x] /stats month \[current year\] 
-  - [ ] Return summary in chart
-- [ ] Calculate by date range
-  - [ ] Return summary in text
-  - [ ] Return summary in chart
-- [ ] Export transactions
-- [ ] Set custom categories per user
+- [x] Add a transaction as current user
+- [x] Selection of category when adding transaction
+- [x] Delete last entry by using /undo command
+- [X] Calculate transaction per month
+- [x] Triggered from /stats, default fetch from current month.
+- [x] /stats [month] [year]
+- [ ] View transactions by using /list command (UX tbd)
+- [ ] Allow user to change timezone. (default Asia/Singapore)
+- [ ] Allow user to change currency. (default SGD)
+- [ ] Export transactions to file
 
 # Dev / Infra 
-- [ ] Add CICD from github actions to deploy to remote server 
-  - [ ] Pull from remote and build and run :(
+- [ ] Fix image deployed on github container repository not being reached by telegram server
 
 # Misc
 - [x] Consolidate SQL to the latest schema
