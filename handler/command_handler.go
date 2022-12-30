@@ -179,7 +179,7 @@ func (handler CommandHandler) Stats(ctx context.Context, msg *tgbotapi.MessageCo
 
 	month, year := parseMonthYearFromStatsMessage(update.Message.Text)
 
-	breakdowns, total, err := handler.transactionRepo.GetTransactionBreakdownByCategory2(ctx, month, year, *user)
+	breakdowns, total, err := handler.transactionRepo.GetTransactionBreakdownByCategory(ctx, month, year, *user)
 
 	if err != nil {
 		log.Error().Msgf("Error getting breakdowns: %v", err)
