@@ -26,7 +26,7 @@ const (
 	cannotRecogniseAmountMsg = "I don't recognise that amount of money :(\n"
 	descriptionTooLong       = "Sorry, your description is too long :(\n"
 
-	transactionHeaderHTMLMsg = "<b>%s %v\n\n</b>" // E.g. November 2022
+	statsHeaderHTMLMsg = "<b>%s %v\n</b>%s\n\n" // E.g. November 2022
 
 	transactionTypeInlineColSize = 2
 )
@@ -179,7 +179,7 @@ func (handler CommandHandler) Stats(ctx context.Context, msg *tgbotapi.MessageCo
 
 	month, year := parseMonthYearFromStatsMessage(update.Message.Text)
 
-	breakdowns, err := handler.transactionRepo.GetTransactionBreakdownByCategory(ctx, month, year, *user)
+	breakdowns, total, err := handler.transactionRepo.GetTransactionBreakdownByCategory(ctx, month, year, *user)
 
 	if err != nil {
 		log.Error().Msgf("Error getting breakdowns: %v", err)
@@ -187,7 +187,7 @@ func (handler CommandHandler) Stats(ctx context.Context, msg *tgbotapi.MessageCo
 		return
 	}
 
-	header := fmt.Sprintf(transactionHeaderHTMLMsg, month.String(), year)
+	header := fmt.Sprintf(statsHeaderHTMLMsg, month.String(), year, total.Display())
 	msg.Text = header + breakdowns.GetFormattedHTMLText()
 	msg.ParseMode = tgbotapi.ModeHTML
 	return
