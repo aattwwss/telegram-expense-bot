@@ -29,6 +29,7 @@ touch .env.local
 vim .env.local
 ```
 4. Run the server and bot
+
 Without docker
 ```bash
 export .env.local
