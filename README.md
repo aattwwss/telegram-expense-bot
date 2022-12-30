@@ -2,7 +2,6 @@
 
 # Add To Telegram
 Add @MyXpensesBot on telegram.
-[![qr.png](https://i.postimg.cc/Px7PNYx4/qr.png)](https://postimg.cc/5YwxRH8Y)
 
 # How To Self Host
 WIP
