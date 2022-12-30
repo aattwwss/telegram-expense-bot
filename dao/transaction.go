@@ -52,7 +52,7 @@ func (dao TransactionDAO) FindLatestByUserId(ctx context.Context, userId int64) 
 
 func (dao TransactionDAO) Insert(ctx context.Context, transaction entity.Transaction) error {
 	sql := `
-		INSERT INTO transaction ( datetime, category_id, description, user_id, amount, currency)
+		INSERT INTO transaction (datetime, category_id, description, user_id, amount, currency)
 		VALUES ($1, $2, $3, $4, $5, $6)
 		`
 	_, err := dao.db.Exec(ctx, sql, transaction.Datetime, transaction.CategoryId, transaction.Description, transaction.UserId, transaction.Amount, transaction.Currency)
@@ -87,6 +87,27 @@ func (dao TransactionDAO) GetBreakdownByCategory(ctx context.Context, dateFrom t
 			ORDER BY amount DESC;
 		`
 	err := pgxscan.Select(ctx, dao.db, &entities, sql, dateFrom.Format(time.RFC3339), dateTo.Format(time.RFC3339), userId)
+	if err != nil {
+		return nil, err
+	}
+	return entities, nil
+}
+
+func (dao TransactionDAO) ListByMonthAndYear(ctx context.Context, dateFrom time.Time, dateTo time.Time, limit int, transactionId *int, userId int64) ([]entity.Transaction, error) {
+	var entities []entity.Transaction
+	sql := `
+			SELECT id, datetime, category_id, description, user_id, amount, currency
+			FROM transaction
+		    WHERE datetime >= $1::timestamptz
+			  AND datetime < $2::timestamptz
+			  AND user_id = $3
+		`
+	cursor := ""
+	if transactionId != nil {
+		cursor = " AND id > $4 "
+	}
+	order := "ORDER BY datetime DESC;"
+	err := pgxscan.Select(ctx, dao.db, &entities, sql+cursor+order, dateFrom, dateTo, userId)
 	if err != nil {
 		return nil, err
 	}
