@@ -89,21 +89,21 @@ func (repo TransactionRepo) DeleteById(ctx context.Context, id int, userId int64
 	return nil
 }
 
-func (repo TransactionRepo) GetTransactionBreakdownByCategory(ctx context.Context, month time.Month, year int, user domain.User) (domain.Breakdowns, error) {
+func (repo TransactionRepo) GetTransactionBreakdownByCategory(ctx context.Context, month time.Month, year int, user domain.User) (domain.Breakdowns, *money.Money, error) {
 	breakdowns := domain.Breakdowns{}
 
 	dateFromString := fmt.Sprintf("%v-%02d-01", year, int(month))
 	dateFrom, err := time.Parse("2006-01-02", dateFromString)
 
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	dateTo := dateFrom.AddDate(0, 1, 0)
 	dateToString := dateTo.Format("2006-01-02")
 
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	entities, err := repo.transactionDao.GetBreakdownByCategory(ctx, dateFromString, dateToString, user.Id)
@@ -123,5 +123,5 @@ func (repo TransactionRepo) GetTransactionBreakdownByCategory(ctx context.Contex
 		breakdowns = append(breakdowns, breakdown)
 	}
 
-	return breakdowns, nil
+	return breakdowns, money.New(totalAmount, user.Currency.Code), nil
 }
