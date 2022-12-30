@@ -63,7 +63,7 @@ func (dao TransactionDAO) Insert(ctx context.Context, transaction entity.Transac
 
 func (dao TransactionDAO) DeleteById(ctx context.Context, id int, userId int64) error {
 	sql := `
-			DELETE FROM expenditure_bot.transaction 
+			DELETE FROM transaction 
 			WHERE id = $1 AND user_id = $2 ;
 		`
 	_, err := dao.db.Exec(ctx, sql, id, userId)
@@ -78,7 +78,7 @@ func (dao TransactionDAO) GetBreakdownByCategory(ctx context.Context, dateFrom s
 	sql := `
 			SELECT name as     category_name,
 			       sum(amount) amount
-			FROM expenditure_bot.transaction_local_date
+			FROM transaction_local_date
 			WHERE date >= $1
 			  AND date < $2
 			  AND user_id = $3
