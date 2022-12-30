@@ -22,7 +22,7 @@ const (
 	errorFindingUserMsg      = "Sorry there is a problem fetching your information.\n"
 	errorCreatingUserMsg     = "Sorry there is a problem signing you up.\n"
 	signUpSuccessMsg         = "Congratulations! We can get you started right away!\n"
-	helpMsg                  = "Type /start to register.\nType /stats to view your last 3 months expenses.\n\nStart recording your expenses by typing the amount you want to save, followed by the description.\n\ne.g. 12.34 Canned pasta"
+	helpMsg                  = "Type /stats [month] [year] to view the breakdown for the month.\n\ne.g. \"/stats\" will show the breakdown for the current month.\n \"/stats 11\" will show the breakdown for November of the current year.\n \"/stats 11 2022\" will show the breakdown for November 2022.\n\nStart recording your expenses by typing the amount you want to save, followed by the description.\n\ne.g. 12.34 Canned pasta"
 	cannotRecogniseAmountMsg = "I don't recognise that amount of money :(\n"
 	descriptionTooLong       = "Sorry, your description is too long :(\n"
 
