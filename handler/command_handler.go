@@ -188,7 +188,7 @@ func (handler CommandHandler) Stats(ctx context.Context, msg *tgbotapi.MessageCo
 	}
 
 	header := fmt.Sprintf(statsHeaderHTMLMsg, month.String(), year, total.Display())
-	msg.Text = header + breakdowns.GetFormattedHTMLText()
+	msg.Text = header + breakdowns.GetFormattedHTMLMsg()
 	msg.ParseMode = tgbotapi.ModeHTML
 	return
 }

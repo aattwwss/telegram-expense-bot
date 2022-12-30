@@ -27,7 +27,7 @@ type Breakdown struct {
 
 type Breakdowns []Breakdown
 
-func (bds Breakdowns) GetFormattedHTMLText() string {
+func (bds Breakdowns) GetFormattedHTMLMsg() string {
 	text := ""
 
 	longest := 0
