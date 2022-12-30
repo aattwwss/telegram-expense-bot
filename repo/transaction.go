@@ -93,20 +93,19 @@ func (repo TransactionRepo) GetTransactionBreakdownByCategory(ctx context.Contex
 	breakdowns := domain.Breakdowns{}
 
 	dateFromString := fmt.Sprintf("%v-%02d-01", year, int(month))
-	dateFrom, err := time.Parse("2006-01-02", dateFromString)
+	dateFrom, err := time.ParseInLocation("2006-01-02", dateFromString, user.Location)
 
 	if err != nil {
 		return nil, nil, err
 	}
 
 	dateTo := dateFrom.AddDate(0, 1, 0)
-	dateToString := dateTo.Format("2006-01-02")
 
 	if err != nil {
 		return nil, nil, err
 	}
 
-	entities, err := repo.transactionDao.GetBreakdownByCategory(ctx, dateFromString, dateToString, user.Id)
+	entities, err := repo.transactionDao.GetBreakdownByCategory(ctx, dateFrom, dateTo, user.Id)
 	var totalAmount int64
 
 	for _, e := range entities {
