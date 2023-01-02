@@ -1,10 +1,11 @@
 package util
 
 import (
+	"math"
+
 	"github.com/aattwwss/telegram-expense-bot/domain"
 	"github.com/aattwwss/telegram-expense-bot/enum"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
-	"math"
 )
 
 type InlineKeyboardConfig struct {

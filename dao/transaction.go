@@ -110,3 +110,19 @@ func (dao TransactionDAO) ListByMonthAndYear(ctx context.Context, dateFrom time.
 	}
 	return entities, nil
 }
+
+func (dao TransactionDAO) CountListByMonthAndYear(ctx context.Context, dateFrom time.Time, dateTo time.Time, userId int64) (int, error) {
+	var count int
+	sql := `
+			SELECT COUNT(*) 
+			FROM transaction t 
+		    WHERE t.datetime >= $1::timestamptz
+			  AND t.datetime < $2::timestamptz
+			  AND t.user_id = $3
+		`
+	err := dao.db.QueryRow(ctx, sql, dateFrom.Format(time.RFC3339), dateTo.Format(time.RFC3339), userId).Scan(&count)
+	if err != nil {
+		return 0, err
+	}
+	return count, nil
+}

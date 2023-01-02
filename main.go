@@ -11,6 +11,7 @@ import (
 	"github.com/aattwwss/telegram-expense-bot/dao"
 	"github.com/aattwwss/telegram-expense-bot/db"
 	"github.com/aattwwss/telegram-expense-bot/domain"
+	"github.com/aattwwss/telegram-expense-bot/enum"
 	"github.com/aattwwss/telegram-expense-bot/handler"
 	"github.com/aattwwss/telegram-expense-bot/message"
 	"github.com/aattwwss/telegram-expense-bot/repo"
@@ -27,7 +28,7 @@ func botSend(bot *tgbotapi.BotAPI, msg tgbotapi.MessageConfig) {
 	}
 }
 
-func getCallbackType(callbackData string) (string, error) {
+func getCallbackType(callbackData string) (enum.CallbackType, error) {
 	var genericCallback domain.GenericCallback
 	err := json.Unmarshal([]byte(callbackData), &genericCallback)
 	if err != nil {

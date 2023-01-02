@@ -178,7 +178,7 @@ func (handler CommandHandler) Stats(ctx context.Context, msg *tgbotapi.MessageCo
 		return
 	}
 
-	month, year := parseMonthYearFromStatsMessage(update.Message.Text)
+	month, year := parseMonthYearFromMessage(update.Message.Text)
 
 	breakdowns, total, err := handler.transactionRepo.GetTransactionBreakdownByCategory(ctx, month, year, *user)
 
@@ -203,22 +203,32 @@ func (handler CommandHandler) List(ctx context.Context, msg *tgbotapi.MessageCon
 		return
 	}
 
-	month, year := parseMonthYearFromStatsMessage(update.Message.Text)
+	month, year := parseMonthYearFromMessage(update.Message.Text)
 
-	transactions, err := handler.transactionRepo.ListByMonthAndYear(ctx, month, year, 0, 10, *user)
+	transactions, totalCount, err := handler.transactionRepo.ListByMonthAndYear(ctx, month, year, 0, 10, *user)
 	if err != nil {
 		log.Error().Msgf("Error getting list of transactions: %v", err)
 		msg.Text = message.GenericErrReplyMsg
 		return
 	}
 
+	log.Info().Msgf("totalCount: %v", totalCount)
+
 	// show the latest transaction at the bottom of the message
 	sort.Slice(transactions, func(i, j int) bool {
 		return transactions[i].Datetime.Before(transactions[j].Datetime)
 	})
 
+	inlineKeyboard, err := newTransactionListKeyboard(0, 2)
+	if err != nil {
+		log.Error().Msgf("Error generating keyboard for transaction pagination: %v", err)
+		msg.Text = message.GenericErrReplyMsg
+		return
+	}
+
 	msg.Text = transactions.GetFormattedHTMLMsg()
 	msg.ParseMode = tgbotapi.ModeHTML
+	msg.ReplyMarkup = tgbotapi.InlineKeyboardMarkup{InlineKeyboard: inlineKeyboard}
 	return
 }
 
@@ -245,9 +255,44 @@ func newTransactionTypesKeyboard(transactionTypes []domain.TransactionType, mess
 	return util.NewInlineKeyboard(configs, messageContextId, colSize, true), nil
 }
 
-// parseMonthYearFromStatsMessage returns the month and year representation from the string,
+func newTransactionListKeyboard(messageContextId int, colSize int) ([][]tgbotapi.InlineKeyboardButton, error) {
+	prevButton := domain.PaginationCallback{
+		Callback: domain.Callback{
+			Type:             enum.Pagination,
+			MessageContextId: messageContextId,
+		},
+		Action: enum.Previous,
+	}
+
+	prevButtonJson, err := util.ToJson(prevButton)
+	if err != nil {
+		return nil, err
+	}
+
+	nextButton := domain.PaginationCallback{
+		Callback: domain.Callback{
+			Type:             enum.Pagination,
+			MessageContextId: messageContextId,
+		},
+		Action: enum.Next,
+	}
+
+	nextButtonJson, err := util.ToJson(nextButton)
+	if err != nil {
+		return nil, err
+	}
+
+	configs := []util.InlineKeyboardConfig{
+		util.NewInlineKeyboardConfig("<", prevButtonJson),
+		util.NewInlineKeyboardConfig(">", nextButtonJson),
+	}
+
+	return util.NewInlineKeyboard(configs, messageContextId, colSize, true), nil
+}
+
+// parseMonthYearFromMessage returns the month and year representation from the string,
 // any error returns the current month or year
-func parseMonthYearFromStatsMessage(s string) (time.Month, int) {
+func parseMonthYearFromMessage(s string) (time.Month, int) {
 	now := time.Now()
 	month := now.Month()
 	year := now.Year()

@@ -126,21 +126,26 @@ func (repo TransactionRepo) GetTransactionBreakdownByCategory(ctx context.Contex
 	return breakdowns, money.New(totalAmount, user.Currency.Code), nil
 }
 
-func (repo TransactionRepo) ListByMonthAndYear(ctx context.Context, month time.Month, year int, offset int, limit int, user domain.User) (domain.Transactions, error) {
+func (repo TransactionRepo) ListByMonthAndYear(ctx context.Context, month time.Month, year int, offset int, limit int, user domain.User) (domain.Transactions, int, error) {
 	var transactions domain.Transactions
 
 	dateFromString := fmt.Sprintf("%v-%02d-01", year, int(month))
 	dateFrom, err := time.ParseInLocation("2006-01-02", dateFromString, user.Location)
 
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
 	dateTo := dateFrom.AddDate(0, 1, 0)
-	entities, err := repo.transactionDao.ListByMonthAndYear(ctx, dateFrom, dateTo, offset, limit, user.Id)
 
+	totalCount, err := repo.transactionDao.CountListByMonthAndYear(ctx, dateFrom, dateTo, user.Id)
 	if err != nil {
-		return transactions, err
+		return transactions, 0, err
+	}
+
+	entities, err := repo.transactionDao.ListByMonthAndYear(ctx, dateFrom, dateTo, offset, limit, user.Id)
+	if err != nil {
+		return transactions, 0, err
 	}
 
 	for _, e := range entities {
@@ -156,5 +161,5 @@ func (repo TransactionRepo) ListByMonthAndYear(ctx context.Context, month time.M
 		transactions = append(transactions, t)
 	}
 
-	return transactions, nil
+	return transactions, totalCount, nil
 }
