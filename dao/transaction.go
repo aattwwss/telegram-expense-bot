@@ -20,8 +20,8 @@ func NewTransactionDao(db *pgxpool.Pool) TransactionDAO {
 func (dao TransactionDAO) GetById(ctx context.Context, id int, userId int64) (entity.Transaction, error) {
 	var transactions []*entity.Transaction
 	sql := `
-			SELECT id, datetime, category_id, description, user_id, amount, currency 
-			FROM transaction 
+			SELECT t.id, t.datetime, t.category_id, t.description, t.user_id, t.amount, t.currency, c.name as category_name
+			FROM transaction t JOIN category c on t.category_id = c.id
 			WHERE id = $1 and user_id = $2
 			`
 	err := pgxscan.Select(ctx, dao.db, &transactions, sql, id, userId)
@@ -96,15 +96,15 @@ func (dao TransactionDAO) GetBreakdownByCategory(ctx context.Context, dateFrom t
 func (dao TransactionDAO) ListByMonthAndYear(ctx context.Context, dateFrom time.Time, dateTo time.Time, offset int, limit int, userId int64) ([]entity.Transaction, error) {
 	var entities []entity.Transaction
 	sql := `
-			SELECT id, datetime, category_id, description, user_id, amount, currency
-			FROM transaction
-		    WHERE datetime >= $1::timestamptz
-			  AND datetime < $2::timestamptz
-			  AND user_id = $3
-		    ORDER BY datetime DESC
+			SELECT t.id, t.datetime, t.category_id, t.description, t.user_id, t.amount, t.currency, c.name as category_name
+			FROM transaction t JOIN category c on t.category_id = c.id
+		    WHERE t.datetime >= $1::timestamptz
+			  AND t.datetime < $2::timestamptz
+			  AND t.user_id = $3
+		    ORDER BY t.datetime DESC
 			OFFSET $4 LIMIT $5
 		`
-	err := pgxscan.Select(ctx, dao.db, &entities, sql, dateFrom, dateTo, offset, limit, userId)
+	err := pgxscan.Select(ctx, dao.db, &entities, sql, dateFrom.Format(time.RFC3339), dateTo.Format(time.RFC3339), userId, offset, limit)
 	if err != nil {
 		return nil, err
 	}

@@ -9,14 +9,27 @@ import (
 )
 
 const PercentCategoryAmountMsg = "<code>%s%.1f%% %s %s%s\n</code>" // E.g. 82.8% Taxes    $1,234.00
+// const ListTransactionMsg = "<code>%s\n%s %s\n%s\n\n</code>"        // E.g. 12/01/2022 Food hotdog $123.45
+const ListTransactionMsg = "%s\n<b>%s</b> %s\n<b>%s</b>\n\n" // E.g. 12/01/2022 Food hotdog $123.45
 
 type Transaction struct {
-	Id          int
-	Datetime    time.Time
-	CategoryId  int
-	Description string
-	UserId      int64
-	Amount      *money.Money
+	Id           int
+	Datetime     time.Time
+	CategoryId   int
+	CategoryName string
+	Description  string
+	UserId       int64
+	Amount       *money.Money
+}
+
+type Transactions []Transaction
+
+func (trxs Transactions) GetFormattedHTMLMsg() string {
+	text := ""
+	for _, t := range trxs {
+		text += fmt.Sprintf(ListTransactionMsg, t.Datetime.Format("<b>02/01/06</b> 15:04"), t.CategoryName, t.Description, t.Amount.Display())
+	}
+	return text
 }
 
 type Breakdown struct {

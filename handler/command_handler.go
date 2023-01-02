@@ -3,6 +3,7 @@ package handler
 import (
 	"context"
 	"fmt"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -189,6 +190,33 @@ func (handler CommandHandler) Stats(ctx context.Context, msg *tgbotapi.MessageCo
 
 	header := fmt.Sprintf(statsHeaderHTMLMsg, month.String(), year, total.Display())
 	msg.Text = header + breakdowns.GetFormattedHTMLMsg()
+	msg.ParseMode = tgbotapi.ModeHTML
+	return
+}
+
+func (handler CommandHandler) List(ctx context.Context, msg *tgbotapi.MessageConfig, update tgbotapi.Update) {
+	userId := update.SentFrom().ID
+	user, err := handler.userRepo.FindUserById(ctx, userId)
+	if err != nil {
+		log.Error().Msgf("Error finding user for stats: %v", err)
+		msg.Text = message.GenericErrReplyMsg
+		return
+	}
+
+	month, year := parseMonthYearFromStatsMessage(update.Message.Text)
+
+	transactions, err := handler.transactionRepo.ListByMonthAndYear(ctx, month, year, 0, 10, *user)
+	if err != nil {
+		log.Error().Msgf("Error getting list of transactions: %v", err)
+		msg.Text = message.GenericErrReplyMsg
+		return
+	}
+
+	sort.Slice(transactions, func(i, j int) bool {
+		return transactions[i].Datetime.Before(transactions[j].Datetime)
+	})
+
+	msg.Text = transactions.GetFormattedHTMLMsg()
 	msg.ParseMode = tgbotapi.ModeHTML
 	return
 }
