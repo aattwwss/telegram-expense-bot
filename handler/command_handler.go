@@ -195,6 +195,8 @@ func (handler CommandHandler) Stats(ctx context.Context, msg *tgbotapi.MessageCo
 }
 
 func (handler CommandHandler) List(ctx context.Context, msg *tgbotapi.MessageConfig, update tgbotapi.Update) {
+	pageSize := 10
+
 	userId := update.SentFrom().ID
 	user, err := handler.userRepo.FindUserById(ctx, userId)
 	if err != nil {
@@ -205,7 +207,7 @@ func (handler CommandHandler) List(ctx context.Context, msg *tgbotapi.MessageCon
 
 	month, year := parseMonthYearFromMessage(update.Message.Text)
 
-	transactions, totalCount, err := handler.transactionRepo.ListByMonthAndYear(ctx, month, year, 0, 10, *user)
+	transactions, totalCount, err := handler.transactionRepo.ListByMonthAndYear(ctx, month, year, 0, pageSize, *user)
 	if err != nil {
 		log.Error().Msgf("Error getting list of transactions: %v", err)
 		msg.Text = message.GenericErrReplyMsg
@@ -219,16 +221,18 @@ func (handler CommandHandler) List(ctx context.Context, msg *tgbotapi.MessageCon
 		return transactions[i].Datetime.Before(transactions[j].Datetime)
 	})
 
-	inlineKeyboard, err := newTransactionListKeyboard(0, 2)
-	if err != nil {
-		log.Error().Msgf("Error generating keyboard for transaction pagination: %v", err)
-		msg.Text = message.GenericErrReplyMsg
-		return
+	if totalCount > pageSize {
+		inlineKeyboard, err := newTransactionListKeyboard(0, 2)
+		if err != nil {
+			log.Error().Msgf("Error generating keyboard for transaction pagination: %v", err)
+			msg.Text = message.GenericErrReplyMsg
+			return
+		}
+		msg.ReplyMarkup = tgbotapi.InlineKeyboardMarkup{InlineKeyboard: inlineKeyboard}
 	}
 
 	msg.Text = transactions.GetFormattedHTMLMsg()
 	msg.ParseMode = tgbotapi.ModeHTML
-	msg.ReplyMarkup = tgbotapi.InlineKeyboardMarkup{InlineKeyboard: inlineKeyboard}
 	return
 }
 
