@@ -9,7 +9,6 @@ import (
 )
 
 const PercentCategoryAmountMsg = "<code>%s%.1f%% %s %s%s\n</code>" // E.g. 82.8% Taxes    $1,234.00
-// const ListTransactionMsg = "<code>%s\n%s %s\n%s\n\n</code>"        // E.g. 12/01/2022 Food hotdog $123.45
 const ListTransactionMsg = "<code>%s\n%s %s %s%s\n\n</code>"
 
 type Transaction struct {
