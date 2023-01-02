@@ -111,6 +111,18 @@ func (handler CallbackHandler) FromCategory(ctx context.Context, msg *tgbotapi.M
 	msg.ParseMode = tgbotapi.ModeHTML
 }
 
+func (handler CallbackHandler) FromPagination(ctx context.Context, msg *tgbotapi.MessageConfig, callbackQuery *tgbotapi.CallbackQuery) {
+
+	var paginationCallback domain.PaginationCallback
+	err := json.Unmarshal([]byte(callbackQuery.Data), &paginationCallback)
+	if err != nil {
+		log.Error().Msgf("FromPagination unmarshall error: %v", err)
+		return
+	}
+
+	handler.deleteMessageContext(ctx, paginationCallback.MessageContextId)
+}
+
 func (handler CallbackHandler) FromCancel(ctx context.Context, msg *tgbotapi.MessageConfig, callbackQuery *tgbotapi.CallbackQuery) {
 
 	var genericCallback domain.GenericCallback

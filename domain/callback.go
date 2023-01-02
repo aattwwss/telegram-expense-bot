@@ -24,4 +24,6 @@ type CategoryCallback struct {
 type PaginationCallback struct {
 	Callback `json:"c"`
 	Action   enum.PaginateAction `json:"a,omitempty"`
+	Offset   int                 `json:"o"`
+	Limit    int                 `json:"l"`
 }

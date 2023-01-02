@@ -13,6 +13,48 @@ type InlineKeyboardConfig struct {
 	data  string
 }
 
+func NewPaginationKeyboard(totalCount int, currentOffset int, limit int, messageContextId int, colSize int) ([][]tgbotapi.InlineKeyboardButton, error) {
+	var configs []InlineKeyboardConfig
+
+	if currentOffset < totalCount && limit < totalCount {
+		nextButton := domain.PaginationCallback{
+			Callback: domain.Callback{
+				Type:             enum.Pagination,
+				MessageContextId: messageContextId,
+			},
+			Action: enum.Previous,
+			Offset: currentOffset + limit,
+			Limit:  limit,
+		}
+
+		nextButtonJson, err := ToJson(nextButton)
+		if err != nil {
+			return nil, err
+		}
+		// symbol is reversed because we are reverse sorting the item in transaction list in reversed
+		configs = append(configs, NewInlineKeyboardConfig("<", nextButtonJson))
+	}
+
+	if currentOffset != 0 {
+		prevButton := domain.PaginationCallback{
+			Callback: domain.Callback{
+				Type:             enum.Pagination,
+				MessageContextId: messageContextId,
+			},
+			Action: enum.Next,
+			Offset: currentOffset - limit,
+			Limit:  limit,
+		}
+
+		prevButtonJson, err := ToJson(prevButton)
+		if err != nil {
+			return nil, err
+		}
+		configs = append(configs, NewInlineKeyboardConfig(">", prevButtonJson))
+	}
+	return NewInlineKeyboard(configs, messageContextId, colSize, true), nil
+}
+
 func CloseInlineKeyboard(bot *tgbotapi.BotAPI, update tgbotapi.Update) error {
 	editMsgConfig := tgbotapi.EditMessageReplyMarkupConfig{
 		BaseEdit: tgbotapi.BaseEdit{

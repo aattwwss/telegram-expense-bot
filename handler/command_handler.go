@@ -30,6 +30,8 @@ const (
 	statsHeaderHTMLMsg = "<b>%s %v\n</b>%s\n\n" // E.g. November 2022
 
 	transactionTypeInlineColSize = 2
+
+	transactionListDefaultPageSize = 10
 )
 
 type CommandHandler struct {
@@ -195,7 +197,7 @@ func (handler CommandHandler) Stats(ctx context.Context, msg *tgbotapi.MessageCo
 }
 
 func (handler CommandHandler) List(ctx context.Context, msg *tgbotapi.MessageConfig, update tgbotapi.Update) {
-	pageSize := 10
+	pageSize := transactionListDefaultPageSize
 
 	userId := update.SentFrom().ID
 	user, err := handler.userRepo.FindUserById(ctx, userId)
@@ -219,15 +221,13 @@ func (handler CommandHandler) List(ctx context.Context, msg *tgbotapi.MessageCon
 		return transactions[i].Datetime.Before(transactions[j].Datetime)
 	})
 
-	if totalCount > pageSize {
-		inlineKeyboard, err := newTransactionListKeyboard(0, 2)
-		if err != nil {
-			log.Error().Msgf("Error generating keyboard for transaction pagination: %v", err)
-			msg.Text = message.GenericErrReplyMsg
-			return
-		}
-		msg.ReplyMarkup = tgbotapi.InlineKeyboardMarkup{InlineKeyboard: inlineKeyboard}
+	inlineKeyboard, err := util.NewPaginationKeyboard(totalCount, 0, pageSize, 0, 2)
+	if err != nil {
+		log.Error().Msgf("Error generating keyboard for transaction pagination: %v", err)
+		msg.Text = message.GenericErrReplyMsg
+		return
 	}
+	msg.ReplyMarkup = tgbotapi.InlineKeyboardMarkup{InlineKeyboard: inlineKeyboard}
 
 	msg.Text = transactions.GetFormattedHTMLMsg()
 	msg.ParseMode = tgbotapi.ModeHTML
@@ -252,41 +252,6 @@ func newTransactionTypesKeyboard(transactionTypes []domain.TransactionType, mess
 
 		config := util.NewInlineKeyboardConfig(transactionType.Name, dataJson)
 		configs = append(configs, config)
-	}
-
-	return util.NewInlineKeyboard(configs, messageContextId, colSize, true), nil
-}
-
-func newTransactionListKeyboard(messageContextId int, colSize int) ([][]tgbotapi.InlineKeyboardButton, error) {
-	prevButton := domain.PaginationCallback{
-		Callback: domain.Callback{
-			Type:             enum.Pagination,
-			MessageContextId: messageContextId,
-		},
-		Action: enum.Previous,
-	}
-
-	prevButtonJson, err := util.ToJson(prevButton)
-	if err != nil {
-		return nil, err
-	}
-
-	nextButton := domain.PaginationCallback{
-		Callback: domain.Callback{
-			Type:             enum.Pagination,
-			MessageContextId: messageContextId,
-		},
-		Action: enum.Next,
-	}
-
-	nextButtonJson, err := util.ToJson(nextButton)
-	if err != nil {
-		return nil, err
-	}
-
-	configs := []util.InlineKeyboardConfig{
-		util.NewInlineKeyboardConfig("<", prevButtonJson),
-		util.NewInlineKeyboardConfig(">", nextButtonJson),
 	}
 
 	return util.NewInlineKeyboard(configs, messageContextId, colSize, true), nil
