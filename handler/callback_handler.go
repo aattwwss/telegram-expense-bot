@@ -140,9 +140,6 @@ func (handler CallbackHandler) FromPagination(ctx context.Context, msg *tgbotapi
 	offset, limit := paginationCallback.Offset, paginationCallback.Limit
 	transactions, totalCount, err := handler.transactionRepo.ListByMonthAndYear(ctx, month, year, offset, limit, *user)
 
-	// show the latest transaction at the bottom of the message
-	transactions.SortForDisplay()
-
 	inlineKeyboard, err := util.NewPaginationKeyboard(totalCount, offset, limit, paginationCallback.MessageContextId, 2)
 	if err != nil {
 		log.Error().Msgf("Error generating keyboard for transaction pagination: %v", err)

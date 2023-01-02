@@ -2,7 +2,6 @@ package domain
 
 import (
 	"fmt"
-	"sort"
 	"strings"
 	"time"
 
@@ -11,7 +10,7 @@ import (
 
 const PercentCategoryAmountMsg = "<code>%s%.1f%% %s %s%s\n</code>" // E.g. 82.8% Taxes    $1,234.00
 // const ListTransactionMsg = "<code>%s\n%s %s\n%s\n\n</code>"        // E.g. 12/01/2022 Food hotdog $123.45
-const ListTransactionMsg = "%s\n<b>%s</b> %s\n<b>%s</b>\n\n" // E.g. 12/01/2022 Food hotdog $123.45
+const ListTransactionMsg = "%s\n<b>%s</b> %s - %s\n\n"
 
 type Transaction struct {
 	Id           int
@@ -27,16 +26,12 @@ type Transactions []Transaction
 
 func (trxs Transactions) GetFormattedHTMLMsg() string {
 	text := ""
-	for _, t := range trxs {
+	// display the transactions in reverse order
+	for i := len(trxs) - 1; i >= 0; i-- {
+		t := trxs[i]
 		text += fmt.Sprintf(ListTransactionMsg, t.Datetime.Format("<b>02/01/06</b> 15:04"), t.CategoryName, t.Description, t.Amount.Display())
 	}
 	return text
-}
-
-func (trxs Transactions) SortForDisplay() {
-	sort.Slice(trxs, func(i, j int) bool {
-		return trxs[i].Datetime.Before(trxs[j].Datetime)
-	})
 }
 
 type Breakdown struct {

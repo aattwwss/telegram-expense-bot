@@ -220,8 +220,6 @@ func (handler CommandHandler) List(ctx context.Context, msg *tgbotapi.MessageCon
 		return
 	}
 
-	transactions.SortForDisplay()
-
 	inlineKeyboard, err := util.NewPaginationKeyboard(totalCount, 0, pageSize, contextId, 2)
 	if err != nil {
 		log.Error().Msgf("Error generating keyboard for transaction pagination: %v", err)
