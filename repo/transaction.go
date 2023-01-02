@@ -124,3 +124,35 @@ func (repo TransactionRepo) GetTransactionBreakdownByCategory(ctx context.Contex
 
 	return breakdowns, money.New(totalAmount, user.Currency.Code), nil
 }
+
+func (repo TransactionRepo) ListByMonthAndYear(ctx context.Context, month time.Month, year int, offset int, limit int, user domain.User) ([]domain.Transaction, error) {
+	var transactions []domain.Transaction
+
+	dateFromString := fmt.Sprintf("%v-%02d-01", year, int(month))
+	dateFrom, err := time.ParseInLocation("2006-01-02", dateFromString, user.Location)
+
+	if err != nil {
+		return nil, err
+	}
+
+	dateTo := dateFrom.AddDate(0, 1, 0)
+	entities, err := repo.transactionDao.ListByMonthAndYear(ctx, dateFrom, dateTo, offset, limit, user.Id)
+
+	if err != nil {
+		return transactions, err
+	}
+
+	for _, e := range entities {
+		t := domain.Transaction{
+			Id:          e.Id,
+			Datetime:    e.Datetime,
+			CategoryId:  e.CategoryId,
+			Description: e.Description,
+			UserId:      e.UserId,
+			Amount:      money.New(e.Amount, e.Currency),
+		}
+		transactions = append(transactions, t)
+	}
+
+	return transactions, nil
+}
