@@ -214,8 +214,6 @@ func (handler CommandHandler) List(ctx context.Context, msg *tgbotapi.MessageCon
 		return
 	}
 
-	log.Info().Msgf("totalCount: %v", totalCount)
-
 	// show the latest transaction at the bottom of the message
 	sort.Slice(transactions, func(i, j int) bool {
 		return transactions[i].Datetime.Before(transactions[j].Datetime)
