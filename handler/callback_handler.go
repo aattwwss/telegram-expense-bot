@@ -112,15 +112,47 @@ func (handler CallbackHandler) FromCategory(ctx context.Context, msg *tgbotapi.M
 }
 
 func (handler CallbackHandler) FromPagination(ctx context.Context, msg *tgbotapi.MessageConfig, callbackQuery *tgbotapi.CallbackQuery) {
+	// TODO Find a way to handle the peristing context when paginating
+	userId := callbackQuery.From.ID
+	user, err := handler.userRepo.FindUserById(ctx, userId)
+	if err != nil {
+		log.Error().Msgf("Error finding user for stats: %v", err)
+		msg.Text = message.GenericErrReplyMsg
+		return
+	}
 
 	var paginationCallback domain.PaginationCallback
-	err := json.Unmarshal([]byte(callbackQuery.Data), &paginationCallback)
+	err = json.Unmarshal([]byte(callbackQuery.Data), &paginationCallback)
 	if err != nil {
 		log.Error().Msgf("FromPagination unmarshall error: %v", err)
 		return
 	}
 
-	handler.deleteMessageContext(ctx, paginationCallback.MessageContextId)
+	messageContext, err := handler.messageContextRepo.GetMessageById(ctx, paginationCallback.Callback.MessageContextId)
+	if err != nil {
+		log.Error().Msgf("Get message context by id error: %v", err)
+		msg.Text = message.GenericErrReplyMsg
+		return
+	}
+
+	month, year := util.ParseMonthYearFromMessage(messageContext)
+
+	offset, limit := paginationCallback.Offset, paginationCallback.Limit
+	transactions, totalCount, err := handler.transactionRepo.ListByMonthAndYear(ctx, month, year, offset, limit, *user)
+
+	// show the latest transaction at the bottom of the message
+	transactions.SortForDisplay()
+
+	inlineKeyboard, err := util.NewPaginationKeyboard(totalCount, offset, limit, paginationCallback.MessageContextId, 2)
+	if err != nil {
+		log.Error().Msgf("Error generating keyboard for transaction pagination: %v", err)
+		msg.Text = message.GenericErrReplyMsg
+		return
+	}
+	msg.ReplyMarkup = tgbotapi.InlineKeyboardMarkup{InlineKeyboard: inlineKeyboard}
+
+	msg.Text = transactions.GetFormattedHTMLMsg()
+	msg.ParseMode = tgbotapi.ModeHTML
 }
 
 func (handler CallbackHandler) FromCancel(ctx context.Context, msg *tgbotapi.MessageConfig, callbackQuery *tgbotapi.CallbackQuery) {

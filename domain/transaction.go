@@ -2,6 +2,7 @@ package domain
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 	"time"
 
@@ -30,6 +31,12 @@ func (trxs Transactions) GetFormattedHTMLMsg() string {
 		text += fmt.Sprintf(ListTransactionMsg, t.Datetime.Format("<b>02/01/06</b> 15:04"), t.CategoryName, t.Description, t.Amount.Display())
 	}
 	return text
+}
+
+func (trxs Transactions) SortForDisplay() {
+	sort.Slice(trxs, func(i, j int) bool {
+		return trxs[i].Datetime.Before(trxs[j].Datetime)
+	})
 }
 
 type Breakdown struct {

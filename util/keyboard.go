@@ -16,7 +16,8 @@ type InlineKeyboardConfig struct {
 func NewPaginationKeyboard(totalCount int, currentOffset int, limit int, messageContextId int, colSize int) ([][]tgbotapi.InlineKeyboardButton, error) {
 	var configs []InlineKeyboardConfig
 
-	if currentOffset < totalCount && limit < totalCount {
+	nextOffset := currentOffset + limit
+	if nextOffset < totalCount && limit < totalCount {
 		nextButton := domain.PaginationCallback{
 			Callback: domain.Callback{
 				Type:             enum.Pagination,

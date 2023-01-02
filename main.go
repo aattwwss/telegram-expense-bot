@@ -51,9 +51,11 @@ func handleCallback(ctx context.Context, bot *tgbotapi.BotAPI, update tgbotapi.U
 	}
 
 	switch callbackType {
-	case "Category":
+	case enum.Category:
 		callbackHandler.FromCategory(ctx, &msg, update.CallbackQuery)
-	case "Cancel":
+	case enum.Pagination:
+		callbackHandler.FromPagination(ctx, &msg, update.CallbackQuery)
+	case enum.Cancel:
 		callbackHandler.FromCancel(ctx, &msg, update.CallbackQuery)
 		return
 	default:

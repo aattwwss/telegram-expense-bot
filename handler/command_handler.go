@@ -3,8 +3,6 @@ package handler
 import (
 	"context"
 	"fmt"
-	"sort"
-	"strconv"
 	"strings"
 	"time"
 
@@ -180,7 +178,7 @@ func (handler CommandHandler) Stats(ctx context.Context, msg *tgbotapi.MessageCo
 		return
 	}
 
-	month, year := parseMonthYearFromMessage(update.Message.Text)
+	month, year := util.ParseMonthYearFromMessage(update.Message.Text)
 
 	breakdowns, total, err := handler.transactionRepo.GetTransactionBreakdownByCategory(ctx, month, year, *user)
 
@@ -207,7 +205,13 @@ func (handler CommandHandler) List(ctx context.Context, msg *tgbotapi.MessageCon
 		return
 	}
 
-	month, year := parseMonthYearFromMessage(update.Message.Text)
+	contextId, err := handler.messageContextRepo.Add(ctx, update.Message.Text)
+	if err != nil {
+		msg.Text = message.GenericErrReplyMsg
+		return
+	}
+
+	month, year := util.ParseMonthYearFromMessage(update.Message.Text)
 
 	transactions, totalCount, err := handler.transactionRepo.ListByMonthAndYear(ctx, month, year, 0, pageSize, *user)
 	if err != nil {
@@ -216,12 +220,9 @@ func (handler CommandHandler) List(ctx context.Context, msg *tgbotapi.MessageCon
 		return
 	}
 
-	// show the latest transaction at the bottom of the message
-	sort.Slice(transactions, func(i, j int) bool {
-		return transactions[i].Datetime.Before(transactions[j].Datetime)
-	})
+	transactions.SortForDisplay()
 
-	inlineKeyboard, err := util.NewPaginationKeyboard(totalCount, 0, pageSize, 0, 2)
+	inlineKeyboard, err := util.NewPaginationKeyboard(totalCount, 0, pageSize, contextId, 2)
 	if err != nil {
 		log.Error().Msgf("Error generating keyboard for transaction pagination: %v", err)
 		msg.Text = message.GenericErrReplyMsg
@@ -255,24 +256,4 @@ func newTransactionTypesKeyboard(transactionTypes []domain.TransactionType, mess
 	}
 
 	return util.NewInlineKeyboard(configs, messageContextId, colSize, true), nil
-}
-
-// parseMonthYearFromMessage returns the month and year representation from the string,
-// any error returns the current month or year
-func parseMonthYearFromMessage(s string) (time.Month, int) {
-	now := time.Now()
-	month := now.Month()
-	year := now.Year()
-	arr := strings.Split(s, " ")
-	if len(arr) == 2 {
-		return util.ParseMonthFromString(arr[1]), year
-	}
-	if len(arr) == 3 {
-		y, err := strconv.Atoi(arr[2])
-		if err != nil {
-			y = year
-		}
-		return util.ParseMonthFromString(arr[1]), y
-	}
-	return month, year
 }
