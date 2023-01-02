@@ -113,3 +113,24 @@ func (dao TransactionDAO) ListByMonthAndYear(ctx context.Context, dateFrom time.
 	}
 	return entities, nil
 }
+
+func (dao TransactionDAO) ListByMonthAndYear(ctx context.Context, dateFrom time.Time, dateTo time.Time, limit int, transactionId *int, userId int64) ([]entity.Transaction, error) {
+	var entities []entity.Transaction
+	sql := `
+			SELECT id, datetime, category_id, description, user_id, amount, currency
+			FROM transaction
+		    WHERE datetime >= $1::timestamptz
+			  AND datetime < $2::timestamptz
+			  AND user_id = $3
+		`
+	cursor := ""
+	if transactionId != nil {
+		cursor = " AND id > $4 "
+	}
+	order := "ORDER BY datetime DESC;"
+	err := pgxscan.Select(ctx, dao.db, &entities, sql+cursor+order, dateFrom, dateTo, userId)
+	if err != nil {
+		return nil, err
+	}
+	return entities, nil
+}
