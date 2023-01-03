@@ -21,9 +21,8 @@ const (
 	errorFindingUserMsg      = "Sorry there is a problem fetching your information.\n"
 	errorCreatingUserMsg     = "Sorry there is a problem signing you up.\n"
 	signUpSuccessMsg         = "Congratulations! We can get you started right away!\n"
-	helpMsg                  = "Type /stats [month] [year] to view the breakdown for the month.\n\ne.g. \"/stats\" will show the breakdown for the current month.\n \"/stats 11\" will show the breakdown for November of the current year.\n \"/stats 11 2022\" will show the breakdown for November 2022.\n\nStart recording your expenses by typing the amount you want to save, followed by the description.\n\ne.g. 12.34 Canned pasta"
 	cannotRecogniseAmountMsg = "I don't recognise that amount of money :(\n"
-	descriptionTooLong       = "Sorry, your description is too long :(\n"
+	descriptionTooLong       = "Sorry, your description (max 20 characters) is too long :( \n"
 
 	statsHeaderHTMLMsg = "<b>%s %v\n</b>%s\n\n" // E.g. November 2022
 
@@ -91,7 +90,7 @@ func (handler CommandHandler) Start(ctx context.Context, msg *tgbotapi.MessageCo
 }
 
 func (handler CommandHandler) Help(ctx context.Context, msg *tgbotapi.MessageConfig, update tgbotapi.Update) {
-	msg.Text = helpMsg
+	msg.Text = message.HelpMsg
 	return
 }
 
@@ -139,7 +138,7 @@ func (handler CommandHandler) StartTransaction(ctx context.Context, msg *tgbotap
 	}
 
 	stringAfter := util.After(update.Message.Text, floatString)
-	if len(strings.TrimSpace(stringAfter)) > 255 {
+	if len(strings.TrimSpace(stringAfter)) > 20 {
 		msg.Text = descriptionTooLong
 		return
 	}
