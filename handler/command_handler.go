@@ -23,6 +23,7 @@ const (
 	signUpSuccessMsg         = "Congratulations! We can get you started right away!\n"
 	cannotRecogniseAmountMsg = "I don't recognise that amount of money :(\n"
 	descriptionTooLong       = "Sorry, your description (max 20 characters) is too long :( \n"
+	transactionListEmptyMsg  = "You have no transactions this month."
 
 	statsHeaderHTMLMsg = "<b>%s %v\n</b>%s\n\n" // E.g. November 2022
 
@@ -216,6 +217,10 @@ func (handler CommandHandler) List(ctx context.Context, msg *tgbotapi.MessageCon
 	if err != nil {
 		log.Error().Msgf("Error getting list of transactions: %v", err)
 		msg.Text = message.GenericErrReplyMsg
+		return
+	}
+	if totalCount == 0 {
+		msg.Text = transactionListEmptyMsg
 		return
 	}
 
