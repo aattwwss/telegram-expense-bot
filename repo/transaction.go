@@ -142,6 +142,9 @@ func (repo TransactionRepo) ListByMonthAndYear(ctx context.Context, month time.M
 	if err != nil {
 		return transactions, 0, err
 	}
+	if totalCount == 0 {
+		return transactions, totalCount, nil
+	}
 
 	entities, err := repo.transactionDao.ListByMonthAndYear(ctx, dateFrom, dateTo, offset, limit, user.Id)
 	if err != nil {
