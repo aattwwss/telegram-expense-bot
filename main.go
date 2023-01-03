@@ -11,6 +11,7 @@ import (
 	"github.com/aattwwss/telegram-expense-bot/dao"
 	"github.com/aattwwss/telegram-expense-bot/db"
 	"github.com/aattwwss/telegram-expense-bot/domain"
+	"github.com/aattwwss/telegram-expense-bot/enum"
 	"github.com/aattwwss/telegram-expense-bot/handler"
 	"github.com/aattwwss/telegram-expense-bot/message"
 	"github.com/aattwwss/telegram-expense-bot/repo"
@@ -27,7 +28,7 @@ func botSend(bot *tgbotapi.BotAPI, msg tgbotapi.MessageConfig) {
 	}
 }
 
-func getCallbackType(callbackData string) (string, error) {
+func getCallbackType(callbackData string) (enum.CallbackType, error) {
 	var genericCallback domain.GenericCallback
 	err := json.Unmarshal([]byte(callbackData), &genericCallback)
 	if err != nil {
@@ -50,9 +51,11 @@ func handleCallback(ctx context.Context, bot *tgbotapi.BotAPI, update tgbotapi.U
 	}
 
 	switch callbackType {
-	case "Category":
+	case enum.Category:
 		callbackHandler.FromCategory(ctx, &msg, update.CallbackQuery)
-	case "Cancel":
+	case enum.Pagination:
+		callbackHandler.FromPagination(ctx, &msg, update.CallbackQuery)
+	case enum.Cancel:
 		callbackHandler.FromCancel(ctx, &msg, update.CallbackQuery)
 		return
 	default:
@@ -77,6 +80,8 @@ func handleMessage(ctx context.Context, bot *tgbotapi.BotAPI, update tgbotapi.Up
 			commandHandler.Stats(ctx, &msg, update)
 		case "undo":
 			commandHandler.Undo(ctx, &msg, update)
+		case "list":
+			commandHandler.List(ctx, &msg, update)
 		default:
 			commandHandler.Help(ctx, &msg, update)
 		}

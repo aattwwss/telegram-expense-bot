@@ -9,14 +9,37 @@ import (
 )
 
 const PercentCategoryAmountMsg = "<code>%s%.1f%% %s %s%s\n</code>" // E.g. 82.8% Taxes    $1,234.00
+const ListTransactionMsg = "<code>%s\n%s %s %s%s\n\n</code>"
 
 type Transaction struct {
-	Id          int
-	Datetime    time.Time
-	CategoryId  int
-	Description string
-	UserId      int64
-	Amount      *money.Money
+	Id           int
+	Datetime     time.Time
+	CategoryId   int
+	CategoryName string
+	Description  string
+	UserId       int64
+	Amount       *money.Money
+}
+
+type Transactions []Transaction
+
+func (trxs Transactions) GetFormattedHTMLMsg() string {
+	text := ""
+	longest := 0
+	for _, t := range trxs {
+		length := len(t.CategoryName) + len(t.Description)
+		if length > longest {
+			longest = length
+		}
+	}
+	// display the transactions in reverse order
+	for i := len(trxs) - 1; i >= 0; i-- {
+		t := trxs[i]
+		dtString := t.Datetime.Format("02/01/06 15:04")
+		spacesToPadAfterDesc := longest - len(t.CategoryName) - len(t.Description)
+		text += fmt.Sprintf(ListTransactionMsg, dtString, t.CategoryName, t.Description, strings.Repeat(" ", spacesToPadAfterDesc), t.Amount.Display())
+	}
+	return text
 }
 
 type Breakdown struct {

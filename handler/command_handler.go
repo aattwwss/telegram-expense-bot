@@ -3,7 +3,6 @@ package handler
 import (
 	"context"
 	"fmt"
-	"strconv"
 	"strings"
 	"time"
 
@@ -22,13 +21,14 @@ const (
 	errorFindingUserMsg      = "Sorry there is a problem fetching your information.\n"
 	errorCreatingUserMsg     = "Sorry there is a problem signing you up.\n"
 	signUpSuccessMsg         = "Congratulations! We can get you started right away!\n"
-	helpMsg                  = "Type /stats [month] [year] to view the breakdown for the month.\n\ne.g. \"/stats\" will show the breakdown for the current month.\n \"/stats 11\" will show the breakdown for November of the current year.\n \"/stats 11 2022\" will show the breakdown for November 2022.\n\nStart recording your expenses by typing the amount you want to save, followed by the description.\n\ne.g. 12.34 Canned pasta"
 	cannotRecogniseAmountMsg = "I don't recognise that amount of money :(\n"
 	descriptionTooLong       = "Sorry, your description (max 20 characters) is too long :( \n"
 
 	statsHeaderHTMLMsg = "<b>%s %v\n</b>%s\n\n" // E.g. November 2022
 
 	transactionTypeInlineColSize = 2
+
+	transactionListDefaultPageSize = 10
 )
 
 type CommandHandler struct {
@@ -90,7 +90,7 @@ func (handler CommandHandler) Start(ctx context.Context, msg *tgbotapi.MessageCo
 }
 
 func (handler CommandHandler) Help(ctx context.Context, msg *tgbotapi.MessageConfig, update tgbotapi.Update) {
-	msg.Text = helpMsg
+	msg.Text = message.HelpMsg
 	return
 }
 
@@ -177,7 +177,7 @@ func (handler CommandHandler) Stats(ctx context.Context, msg *tgbotapi.MessageCo
 		return
 	}
 
-	month, year := parseMonthYearFromStatsMessage(update.Message.Text)
+	month, year := util.ParseMonthYearFromMessage(update.Message.Text)
 
 	breakdowns, total, err := handler.transactionRepo.GetTransactionBreakdownByCategory(ctx, month, year, *user)
 
@@ -189,6 +189,45 @@ func (handler CommandHandler) Stats(ctx context.Context, msg *tgbotapi.MessageCo
 
 	header := fmt.Sprintf(statsHeaderHTMLMsg, month.String(), year, total.Display())
 	msg.Text = header + breakdowns.GetFormattedHTMLMsg()
+	msg.ParseMode = tgbotapi.ModeHTML
+	return
+}
+
+func (handler CommandHandler) List(ctx context.Context, msg *tgbotapi.MessageConfig, update tgbotapi.Update) {
+	pageSize := transactionListDefaultPageSize
+
+	userId := update.SentFrom().ID
+	user, err := handler.userRepo.FindUserById(ctx, userId)
+	if err != nil {
+		log.Error().Msgf("Error finding user for stats: %v", err)
+		msg.Text = message.GenericErrReplyMsg
+		return
+	}
+
+	contextId, err := handler.messageContextRepo.Add(ctx, update.Message.Text)
+	if err != nil {
+		msg.Text = message.GenericErrReplyMsg
+		return
+	}
+
+	month, year := util.ParseMonthYearFromMessage(update.Message.Text)
+
+	transactions, totalCount, err := handler.transactionRepo.ListByMonthAndYear(ctx, month, year, 0, pageSize, *user)
+	if err != nil {
+		log.Error().Msgf("Error getting list of transactions: %v", err)
+		msg.Text = message.GenericErrReplyMsg
+		return
+	}
+
+	inlineKeyboard, err := util.NewPaginationKeyboard(totalCount, 0, pageSize, contextId, 2)
+	if err != nil {
+		log.Error().Msgf("Error generating keyboard for transaction pagination: %v", err)
+		msg.Text = message.GenericErrReplyMsg
+		return
+	}
+	msg.ReplyMarkup = tgbotapi.InlineKeyboardMarkup{InlineKeyboard: inlineKeyboard}
+
+	msg.Text = transactions.GetFormattedHTMLMsg()
 	msg.ParseMode = tgbotapi.ModeHTML
 	return
 }
@@ -214,24 +253,4 @@ func newTransactionTypesKeyboard(transactionTypes []domain.TransactionType, mess
 	}
 
 	return util.NewInlineKeyboard(configs, messageContextId, colSize, true), nil
-}
-
-// parseMonthYearFromStatsMessage returns the month and year representation from the string,
-// any error returns the current month or year
-func parseMonthYearFromStatsMessage(s string) (time.Month, int) {
-	now := time.Now()
-	month := now.Month()
-	year := now.Year()
-	arr := strings.Split(s, " ")
-	if len(arr) == 2 {
-		return util.ParseMonthFromString(arr[1]), year
-	}
-	if len(arr) == 3 {
-		y, err := strconv.Atoi(arr[2])
-		if err != nil {
-			y = year
-		}
-		return util.ParseMonthFromString(arr[1]), y
-	}
-	return month, year
 }

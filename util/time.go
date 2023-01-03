@@ -24,6 +24,26 @@ func (ym YearMonth) String(layout string) (string, error) {
 	return layout, nil
 }
 
+// parseMonthYearFromMessage returns the month and year representation from the string,
+// any error returns the current month or year
+func ParseMonthYearFromMessage(s string) (time.Month, int) {
+	now := time.Now()
+	month := now.Month()
+	year := now.Year()
+	arr := strings.Split(s, " ")
+	if len(arr) == 2 {
+		return ParseMonthFromString(arr[1]), year
+	}
+	if len(arr) == 3 {
+		y, err := strconv.Atoi(arr[2])
+		if err != nil {
+			y = year
+		}
+		return ParseMonthFromString(arr[1]), y
+	}
+	return month, year
+}
+
 // ParseMonthFromString trys to return the month given a string, else it returns the current month.
 func ParseMonthFromString(s string) time.Month {
 	if s == "1" || strings.EqualFold(s, "jan") || strings.EqualFold(s, "january") {
