@@ -29,6 +29,9 @@ touch .env.local
 vim .env.local
 ```
 4. Run the server and bot
+```bash
+go run main.go
+```
 
 Without docker
 ```bash
