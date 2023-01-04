@@ -51,7 +51,7 @@ This bot does not store any personal information other than your telegram user i
 - [X] Calculate transaction per month
 - [x] Triggered from /stats, default fetch from current month.
 - [x] /stats [month] [year]
-- [ ] View transactions by using /list command (UX tbd)
+- [x] View transactions by using /list command
 - [ ] Allow user to change timezone. (default Asia/Singapore)
 - [ ] Allow user to change currency. (default SGD)
 - [ ] Export transactions to file
