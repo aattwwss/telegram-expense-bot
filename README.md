@@ -64,6 +64,8 @@ This bot does not store any personal information other than your telegram user i
 
 # Optimisation 
 - [ ] Don't return cancel button when next and prev button is not returned. (for transaction list)
+- [ ] Delete message context stored in database after a period of time
+- [ ] Store data of inline keyboard somewhere else to bypass the 64 bytes size limit
 
 # Misc
 - [x] Consolidate SQL to the latest schema
