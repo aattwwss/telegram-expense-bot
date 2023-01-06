@@ -53,7 +53,9 @@ func NewPaginationKeyboard(totalCount int, currentOffset int, limit int, message
 		}
 		configs = append(configs, NewInlineKeyboardConfig(">", prevButtonJson))
 	}
-	return NewInlineKeyboard(configs, messageContextId, colSize, true), nil
+
+	showCancelButton := len(configs) > 0
+	return NewInlineKeyboard(configs, messageContextId, colSize, showCancelButton), nil
 }
 
 func CloseInlineKeyboard(bot *tgbotapi.BotAPI, update tgbotapi.Update) error {
@@ -79,7 +81,7 @@ func NewInlineKeyboardConfig(label string, data string) InlineKeyboardConfig {
 
 func NewInlineKeyboard(configs []InlineKeyboardConfig, messageContextId int, colSize int, cancellable bool) [][]tgbotapi.InlineKeyboardButton {
 	numOfRows := roundUpDivision(len(configs), colSize)
-	var itemsKeyboards [][]tgbotapi.InlineKeyboardButton
+	itemsKeyboards := [][]tgbotapi.InlineKeyboardButton{{}} // important to initiate the inner array to allow empty keyboard
 
 	for i := 0; i < numOfRows; i++ {
 		row := tgbotapi.NewInlineKeyboardRow()
