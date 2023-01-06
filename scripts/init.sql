@@ -87,4 +87,4 @@ values ('Child', 1, 1),
        ('Shopping', 1, 9),
        ('Taxes', 1, 10),
        ('Transport', 1, 11),
-       ('Other', 1), 12;
+       ('Other', 1, 99);
