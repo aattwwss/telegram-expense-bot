@@ -2,6 +2,8 @@ package repo
 
 import (
 	"context"
+	"time"
+
 	"github.com/aattwwss/telegram-expense-bot/dao"
 	"github.com/aattwwss/telegram-expense-bot/entity"
 )
@@ -14,10 +16,13 @@ func NewMessageContextRepo(messageContextDAO dao.MessageContextDAO) MessageConte
 	return MessageContextRepo{messageContextDAO: messageContextDAO}
 }
 
-func (repo MessageContextRepo) Add(ctx context.Context, message string) (int, error) {
+func (repo MessageContextRepo) Add(ctx context.Context, chatId int64, messageId int, message string) (int, error) {
 
 	id, err := repo.messageContextDAO.Insert(ctx, entity.MessageContext{
-		Message: message,
+		ChatId:    chatId,
+		MessageId: messageId,
+		Message:   message,
+		CreatedAt: time.Now(),
 	})
 
 	if err != nil {
