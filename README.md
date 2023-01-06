@@ -1,4 +1,4 @@
-# telegram-expenses-bot
+# telegram-expense-bot
 
 # Add To Telegram
 Add @MyXpensesBot on telegram.
