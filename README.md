@@ -63,7 +63,7 @@ This bot does not store any personal information other than your telegram user i
 - [ ] Fix image deployed on github container repository not being reached by telegram server
 
 # Optimisation 
-- [ ] Store message context in some sort of cache to allow invalidation by time
+- [ ] Don't return cancel button when next and prev button is not returned. (for transaction list)
 
 # Misc
 - [x] Consolidate SQL to the latest schema
