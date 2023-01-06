@@ -58,18 +58,14 @@ func NewPaginationKeyboard(totalCount int, currentOffset int, limit int, message
 	return NewInlineKeyboard(configs, messageContextId, colSize, showCancelButton), nil
 }
 
-func CloseInlineKeyboard(bot *tgbotapi.BotAPI, update tgbotapi.Update) error {
-	editMsgConfig := tgbotapi.EditMessageReplyMarkupConfig{
+func NewEditEmptyInlineKeyboard(chatId int64, messageId int) tgbotapi.EditMessageReplyMarkupConfig {
+	return tgbotapi.EditMessageReplyMarkupConfig{
 		BaseEdit: tgbotapi.BaseEdit{
-			ChatID:      update.CallbackQuery.Message.Chat.ID,
-			MessageID:   update.CallbackQuery.Message.MessageID,
+			ChatID:      chatId,
+			MessageID:   messageId,
 			ReplyMarkup: nil,
 		},
 	}
-	if _, err := bot.Request(editMsgConfig); err != nil {
-		return err
-	}
-	return nil
 }
 
 func NewInlineKeyboardConfig(label string, data string) InlineKeyboardConfig {

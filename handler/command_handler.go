@@ -144,8 +144,9 @@ func (handler CommandHandler) StartTransaction(ctx context.Context, msg *tgbotap
 		return
 	}
 
-	contextId, err := handler.messageContextRepo.Add(ctx, update.Message.Text)
+	contextId, err := handler.messageContextRepo.Add(ctx, update.Message.Chat.ID, update.Message.MessageID, update.Message.Text)
 	if err != nil {
+		log.Error().Msgf("Add message context error: %v", err)
 		msg.Text = message.GenericErrReplyMsg
 		return
 	}
@@ -205,8 +206,9 @@ func (handler CommandHandler) List(ctx context.Context, msg *tgbotapi.MessageCon
 		return
 	}
 
-	contextId, err := handler.messageContextRepo.Add(ctx, update.Message.Text)
+	contextId, err := handler.messageContextRepo.Add(ctx, update.Message.Chat.ID, update.Message.MessageID, update.Message.Text)
 	if err != nil {
+		log.Error().Msgf("Add message context error: %v", err)
 		msg.Text = message.GenericErrReplyMsg
 		return
 	}

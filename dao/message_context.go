@@ -2,6 +2,7 @@ package dao
 
 import (
 	"context"
+
 	"github.com/aattwwss/telegram-expense-bot/entity"
 	"github.com/georgysavva/scany/v2/pgxscan"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -18,10 +19,10 @@ func NewMessageContextDao(db *pgxpool.Pool) MessageContextDAO {
 func (dao MessageContextDAO) Insert(ctx context.Context, messageContext entity.MessageContext) (int, error) {
 	var lastInsertId int
 	sql := `
-		INSERT INTO message_context ( message )
-		VALUES ($1) RETURNING id
+		INSERT INTO message_context ( message, chat_id, message_id, created_at )
+		VALUES ($1,$2,$3,$4) RETURNING id
 		`
-	err := dao.db.QueryRow(ctx, sql, messageContext.Message).Scan(&lastInsertId)
+	err := dao.db.QueryRow(ctx, sql, messageContext.Message, messageContext.ChatId, messageContext.MessageId, messageContext.CreatedAt).Scan(&lastInsertId)
 	if err != nil {
 		return 0, err
 	}
@@ -31,7 +32,7 @@ func (dao MessageContextDAO) Insert(ctx context.Context, messageContext entity.M
 func (dao MessageContextDAO) GetById(ctx context.Context, id int) (*entity.MessageContext, error) {
 	var messageContextEntities []entity.MessageContext
 	sql := `
-			SELECT id, message
+			SELECT id, message, chat_id, message_id, created_at
 			FROM message_context
             WHERE id = $1;
 			`

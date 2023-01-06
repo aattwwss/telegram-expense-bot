@@ -38,7 +38,8 @@ func getCallbackType(callbackData string) (enum.CallbackType, error) {
 }
 
 func handleCallback(ctx context.Context, bot *tgbotapi.BotAPI, update tgbotapi.Update, callbackHandler *handler.CallbackHandler) {
-	err := util.CloseInlineKeyboard(bot, update)
+	emtpyInlineKeyboard := util.NewEditEmptyInlineKeyboard(update.CallbackQuery.Message.Chat.ID, update.CallbackQuery.Message.MessageID)
+	_, err := bot.Request(emtpyInlineKeyboard)
 	if err != nil {
 		log.Error().Msgf("handleCallback error: %v", err)
 	}

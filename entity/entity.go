@@ -43,8 +43,11 @@ type TransactionType struct {
 }
 
 type MessageContext struct {
-	Id      int
-	Message string
+	Id        int
+	ChatId    int64
+	MessageId int
+	Message   string
+	CreatedAt time.Time
 }
 
 type TransactionBreakdown struct {
