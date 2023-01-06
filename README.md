@@ -62,6 +62,9 @@ This bot does not store any personal information other than your telegram user i
 # Dev / Infra 
 - [ ] Fix image deployed on github container repository not being reached by telegram server
 
+# Optimisation 
+- [ ] Store message context in some sort of cache to allow invalidation by time
+
 # Misc
 - [x] Consolidate SQL to the latest schema
 - [x] Prepare docker compose for self hosted guide
