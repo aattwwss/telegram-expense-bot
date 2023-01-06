@@ -60,7 +60,7 @@ This bot does not store any personal information other than your telegram user i
 - [ ] Export transactions to file
 
 # Dev / Infra 
-- [ ] Fix image deployed on github container repository not being reached by telegram server
+- [ ] Fix image deployed on github container repository not reachable by telegram server
 
 # Optimisation 
 - [ ] Don't return cancel button when next and prev button is not returned. (for transaction list)
