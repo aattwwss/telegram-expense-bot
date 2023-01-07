@@ -9,7 +9,9 @@ import (
 )
 
 const PercentCategoryAmountMsg = "<code>%s%.1f%% %s %s%s\n</code>" // E.g. 82.8% Taxes    $1,234.00
-const ListTransactionMsg = "<code>%s\n%s %s %s%s\n\n</code>"
+const ListTransactionHeader = "<b>%s %v</b>\n\n"                   // E.g. January 2023
+const ListTransactionBody = "<code>%s\n%s %s %s%s\n\n</code>"
+const ListTransactionFooter = "<code>[%v/%v]</code>" //E.g. [1/3]
 
 type Transaction struct {
 	Id           int
@@ -23,22 +25,26 @@ type Transaction struct {
 
 type Transactions []Transaction
 
-func (trxs Transactions) GetFormattedHTMLMsg() string {
-	text := ""
+func (trxs Transactions) GetFormattedHTMLMsg(searchedMonth time.Month, searchedYear int, totalCount int, currentOffset int, pageSize int) string {
+	text := fmt.Sprintf(ListTransactionHeader, searchedMonth.String(), searchedYear)
 	longest := 0
+
 	for _, t := range trxs {
 		length := len(t.CategoryName) + len(t.Description)
 		if length > longest {
 			longest = length
 		}
 	}
-	// display the transactions in reverse order
-	for i := len(trxs) - 1; i >= 0; i-- {
-		t := trxs[i]
+
+	for _, t := range trxs {
 		dtString := t.Datetime.Format("02/01/06 15:04")
 		spacesToPadAfterDesc := longest - len(t.CategoryName) - len(t.Description)
-		text += fmt.Sprintf(ListTransactionMsg, dtString, t.CategoryName, t.Description, strings.Repeat(" ", spacesToPadAfterDesc), t.Amount.Display())
+		text += fmt.Sprintf(ListTransactionBody, dtString, t.CategoryName, t.Description, strings.Repeat(" ", spacesToPadAfterDesc), t.Amount.Display())
 	}
+
+	numOfPages := (totalCount-1)/pageSize + 1
+	currentPage := (currentOffset)/pageSize + 1
+	text += fmt.Sprintf(ListTransactionFooter, currentPage, numOfPages)
 	return text
 }
 

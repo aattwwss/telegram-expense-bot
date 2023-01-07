@@ -234,7 +234,7 @@ func (handler CommandHandler) List(ctx context.Context, msg *tgbotapi.MessageCon
 	}
 	msg.ReplyMarkup = tgbotapi.InlineKeyboardMarkup{InlineKeyboard: inlineKeyboard}
 
-	msg.Text = transactions.GetFormattedHTMLMsg()
+	msg.Text = transactions.GetFormattedHTMLMsg(month, year, totalCount, 0, pageSize)
 	msg.ParseMode = tgbotapi.ModeHTML
 	return
 }
