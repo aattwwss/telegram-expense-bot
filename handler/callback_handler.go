@@ -148,7 +148,7 @@ func (handler CallbackHandler) FromPagination(ctx context.Context, msg *tgbotapi
 	}
 	msg.ReplyMarkup = tgbotapi.InlineKeyboardMarkup{InlineKeyboard: inlineKeyboard}
 
-	msg.Text = transactions.GetFormattedHTMLMsg()
+	msg.Text = transactions.GetFormattedHTMLMsg(month, year, totalCount, offset, limit)
 	msg.ParseMode = tgbotapi.ModeHTML
 }
 

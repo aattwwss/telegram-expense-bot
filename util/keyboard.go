@@ -32,8 +32,7 @@ func NewPaginationKeyboard(totalCount int, currentOffset int, limit int, message
 		if err != nil {
 			return nil, err
 		}
-		// symbol is reversed because we are reverse sorting the item in transaction list in reversed
-		configs = append(configs, NewInlineKeyboardConfig("<", nextButtonJson))
+		configs = append(configs, NewInlineKeyboardConfig(">", nextButtonJson))
 	}
 
 	if currentOffset != 0 {
@@ -51,7 +50,7 @@ func NewPaginationKeyboard(totalCount int, currentOffset int, limit int, message
 		if err != nil {
 			return nil, err
 		}
-		configs = append(configs, NewInlineKeyboardConfig(">", prevButtonJson))
+		configs = append(configs, NewInlineKeyboardConfig("<", prevButtonJson))
 	}
 
 	showCancelButton := len(configs) > 0
