@@ -25,7 +25,7 @@ type Transaction struct {
 
 type Transactions []Transaction
 
-func (trxs Transactions) GetFormattedHTMLMsg(searchedMonth time.Month, searchedYear int, totalCount int, currentOffset int, pageSize int) string {
+func (trxs Transactions) GetFormattedHTMLMsg(searchedMonth time.Month, searchedYear int, loc *time.Location, totalCount int, currentOffset int, pageSize int) string {
 	text := fmt.Sprintf(ListTransactionHeader, searchedMonth.String(), searchedYear)
 	longest := 0
 
@@ -37,7 +37,7 @@ func (trxs Transactions) GetFormattedHTMLMsg(searchedMonth time.Month, searchedY
 	}
 
 	for _, t := range trxs {
-		dtString := t.Datetime.Format("02/01/06 15:04")
+		dtString := t.Datetime.In(loc).Format("02/01/06 15:04")
 		spacesToPadAfterDesc := longest - len(t.CategoryName) - len(t.Description)
 		text += fmt.Sprintf(ListTransactionBody, dtString, t.CategoryName, t.Description, strings.Repeat(" ", spacesToPadAfterDesc), t.Amount.Display())
 	}
