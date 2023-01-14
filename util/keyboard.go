@@ -16,6 +16,24 @@ type InlineKeyboardConfig struct {
 func NewPaginationKeyboard(totalCount int, currentOffset int, limit int, messageContextId int, colSize int) ([][]tgbotapi.InlineKeyboardButton, error) {
 	var configs []InlineKeyboardConfig
 
+	if currentOffset != 0 {
+		prevButton := domain.PaginationCallback{
+			Callback: domain.Callback{
+				Type:             enum.Pagination,
+				MessageContextId: messageContextId,
+			},
+			Action: enum.Next,
+			Offset: currentOffset - limit,
+			Limit:  limit,
+		}
+
+		prevButtonJson, err := ToJson(prevButton)
+		if err != nil {
+			return nil, err
+		}
+		configs = append(configs, NewInlineKeyboardConfig("<", prevButtonJson))
+	}
+
 	nextOffset := currentOffset + limit
 	if nextOffset < totalCount && limit < totalCount {
 		nextButton := domain.PaginationCallback{
@@ -33,24 +51,6 @@ func NewPaginationKeyboard(totalCount int, currentOffset int, limit int, message
 			return nil, err
 		}
 		configs = append(configs, NewInlineKeyboardConfig(">", nextButtonJson))
-	}
-
-	if currentOffset != 0 {
-		prevButton := domain.PaginationCallback{
-			Callback: domain.Callback{
-				Type:             enum.Pagination,
-				MessageContextId: messageContextId,
-			},
-			Action: enum.Next,
-			Offset: currentOffset - limit,
-			Limit:  limit,
-		}
-
-		prevButtonJson, err := ToJson(prevButton)
-		if err != nil {
-			return nil, err
-		}
-		configs = append(configs, NewInlineKeyboardConfig("<", prevButtonJson))
 	}
 
 	showCancelButton := len(configs) > 0
