@@ -2,7 +2,9 @@ package handler
 
 import (
 	"context"
+	"encoding/csv"
 	"fmt"
+	"os"
 	"strings"
 	"time"
 
@@ -237,6 +239,53 @@ func (handler CommandHandler) List(ctx context.Context, msg *tgbotapi.MessageCon
 	msg.Text = transactions.GetFormattedHTMLMsg(month, year, user.Location, totalCount, 0, pageSize)
 	msg.ParseMode = tgbotapi.ModeHTML
 	return
+}
+
+func (handler CommandHandler) Export(ctx context.Context, bot *tgbotapi.BotAPI, msg *tgbotapi.MessageConfig, update tgbotapi.Update) {
+	pageSize := transactionListDefaultPageSize
+
+	userId := update.SentFrom().ID
+	user, err := handler.userRepo.FindUserById(ctx, userId)
+	if err != nil {
+		log.Error().Msgf("Error finding user for stats: %v", err)
+		msg.Text = message.GenericErrReplyMsg
+		return
+	}
+
+	month, year := util.ParseMonthYearFromMessage(update.Message.Text)
+	fileName := fmt.Sprintf("expenses_%02d_%v_*.csv", int(month), year)
+	f, err := os.CreateTemp("", fileName)
+	defer os.Remove(f.Name())
+
+	csvWriter := csv.NewWriter(f)
+	defer csvWriter.Flush()
+
+	offset := 0
+	for {
+		transactions, totalCount, err := handler.transactionRepo.ListByMonthAndYear(ctx, month, year, offset, pageSize, *user)
+		if offset > totalCount {
+			break
+		}
+		if err != nil {
+			log.Error().Msgf("Error finding listing transactions for export: %v", err)
+			msg.Text = message.GenericErrReplyMsg
+			return
+		}
+		for _, t := range transactions {
+			data := []string{t.Datetime.String(), t.CategoryName, fmt.Sprintf("%v", t.Amount.AsMajorUnits()), t.Amount.Currency().Code}
+			csvWriter.Write(data)
+			csvWriter.Flush()
+		}
+		offset += pageSize
+	}
+	docMsg := tgbotapi.NewDocument(update.Message.Chat.ID, tgbotapi.FilePath(f.Name()))
+	m, err := bot.Send(docMsg)
+	if err != nil {
+		log.Error().Msgf("send document error: %v", err)
+	}
+	log.Info().Msgf("send document : %v", m)
+	msg.Text = fmt.Sprintf("Exported expenses for %s %v", month.String(), year)
+
 }
 
 func newTransactionTypesKeyboard(transactionTypes []domain.TransactionType, messageContextId int, colSize int) ([][]tgbotapi.InlineKeyboardButton, error) {
