@@ -24,7 +24,7 @@ import (
 
 func botSend(bot *tgbotapi.BotAPI, msg tgbotapi.MessageConfig) {
 	if _, err := bot.Send(msg); err != nil {
-		log.Error().Msgf("handleCallback error: %v", err)
+		log.Error().Msgf("handleCallback error: %w", err)
 	}
 }
 
@@ -42,7 +42,7 @@ func handleCallback(ctx context.Context, bot *tgbotapi.BotAPI, update tgbotapi.U
 		emtpyInlineKeyboard := util.NewEditEmptyInlineKeyboard(update.CallbackQuery.Message.Chat.ID, update.CallbackQuery.Message.MessageID)
 		_, err := bot.Request(emtpyInlineKeyboard)
 		if err != nil {
-			log.Error().Msgf("handleCallback error: %v", err)
+			log.Error().Msgf("handleCallback error: %w", err)
 		}
 	}(update.CallbackQuery.Message.Chat.ID, update.CallbackQuery.Message.MessageID)
 
