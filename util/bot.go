@@ -7,12 +7,11 @@ import (
 
 func BotSendWrapper(bot *tgbotapi.BotAPI, chattables ...tgbotapi.Chattable) {
 	for _, c := range chattables {
-		m, err := bot.Send(c)
+		_, err := bot.Send(c)
 		if err != nil {
 			log.Error().Msgf("bot send chattable error: %w", err)
 			return
 		}
-		log.Info().Msgf("Chattable sent: %v", m)
 	}
 }
 

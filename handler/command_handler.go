@@ -31,7 +31,8 @@ const (
 
 	transactionTypeInlineColSize = 2
 
-	transactionListDefaultPageSize = 10
+	listDefaultPageSize   = 10
+	exportDefaultPageSize = 1
 )
 
 type CommandHandler struct {
@@ -202,7 +203,7 @@ func (handler CommandHandler) Stats(ctx context.Context, bot *tgbotapi.BotAPI, u
 }
 
 func (handler CommandHandler) List(ctx context.Context, bot *tgbotapi.BotAPI, update tgbotapi.Update) {
-	pageSize := transactionListDefaultPageSize
+	pageSize := listDefaultPageSize
 	userId := update.SentFrom().ID
 	user, err := handler.userRepo.FindUserById(ctx, userId)
 	if err != nil {
@@ -246,7 +247,7 @@ func (handler CommandHandler) List(ctx context.Context, bot *tgbotapi.BotAPI, up
 }
 
 func (handler CommandHandler) Export(ctx context.Context, bot *tgbotapi.BotAPI, update tgbotapi.Update) {
-	pageSize := transactionListDefaultPageSize
+	pageSize := exportDefaultPageSize
 
 	userId := update.SentFrom().ID
 	user, err := handler.userRepo.FindUserById(ctx, userId)
@@ -285,7 +286,6 @@ func (handler CommandHandler) Export(ctx context.Context, bot *tgbotapi.BotAPI, 
 
 	docMsg := tgbotapi.NewDocument(update.Message.Chat.ID, tgbotapi.FilePath(f.Name()))
 	docMsg.Caption = fmt.Sprintf("Exported expenses for %s %v", month.String(), year)
-	log.Info().Msgf("command handler sending document")
 	util.BotSendWrapper(bot, docMsg)
 }
 
