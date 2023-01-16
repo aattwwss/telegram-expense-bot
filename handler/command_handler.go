@@ -279,13 +279,12 @@ func (handler CommandHandler) Export(ctx context.Context, bot *tgbotapi.BotAPI, 
 		offset += pageSize
 	}
 	docMsg := tgbotapi.NewDocument(update.Message.Chat.ID, tgbotapi.FilePath(f.Name()))
-	m, err := bot.Send(docMsg)
+	_, err = bot.Send(docMsg)
 	if err != nil {
 		log.Error().Msgf("send document error: %v", err)
 	}
-	log.Info().Msgf("send document : %v", m)
-	msg.Text = fmt.Sprintf("Exported expenses for %s %v", month.String(), year)
 
+	msg.Text = fmt.Sprintf("Exported expenses for %s %v", month.String(), year)
 }
 
 func newTransactionTypesKeyboard(transactionTypes []domain.TransactionType, messageContextId int, colSize int) ([][]tgbotapi.InlineKeyboardButton, error) {
