@@ -176,7 +176,6 @@ func (handler CommandHandler) StartTransaction(ctx context.Context, bot *tgbotap
 }
 
 func (handler CommandHandler) Stats(ctx context.Context, bot *tgbotapi.BotAPI, update tgbotapi.Update) {
-	var text string
 	userId := update.SentFrom().ID
 	user, err := handler.userRepo.FindUserById(ctx, userId)
 	if err != nil {
@@ -196,7 +195,7 @@ func (handler CommandHandler) Stats(ctx context.Context, bot *tgbotapi.BotAPI, u
 	}
 
 	header := fmt.Sprintf(statsHeaderHTMLMsg, month.String(), year, total.Display())
-	text = header + breakdowns.GetFormattedHTMLMsg()
+	text := header + breakdowns.GetFormattedHTMLMsg()
 	msg := tgbotapi.NewMessage(update.Message.Chat.ID, text)
 	msg.ParseMode = tgbotapi.ModeHTML
 	util.BotSendWrapper(bot, msg)
@@ -204,7 +203,6 @@ func (handler CommandHandler) Stats(ctx context.Context, bot *tgbotapi.BotAPI, u
 
 func (handler CommandHandler) List(ctx context.Context, bot *tgbotapi.BotAPI, update tgbotapi.Update) {
 	pageSize := transactionListDefaultPageSize
-	var text string
 	userId := update.SentFrom().ID
 	user, err := handler.userRepo.FindUserById(ctx, userId)
 	if err != nil {
@@ -240,7 +238,7 @@ func (handler CommandHandler) List(ctx context.Context, bot *tgbotapi.BotAPI, up
 		return
 	}
 
-	text += transactions.GetFormattedHTMLMsg(month, year, user.Location, totalCount, 0, pageSize)
+	text := transactions.GetFormattedHTMLMsg(month, year, user.Location, totalCount, 0, pageSize)
 	msg := tgbotapi.NewMessage(update.Message.Chat.ID, text)
 	msg.ReplyMarkup = tgbotapi.InlineKeyboardMarkup{InlineKeyboard: inlineKeyboard}
 	msg.ParseMode = tgbotapi.ModeHTML
@@ -287,12 +285,7 @@ func (handler CommandHandler) Export(ctx context.Context, bot *tgbotapi.BotAPI, 
 
 	docMsg := tgbotapi.NewDocument(update.Message.Chat.ID, tgbotapi.FilePath(f.Name()))
 	docMsg.Caption = fmt.Sprintf("Exported expenses for %s %v", month.String(), year)
-	_, err = bot.Send(docMsg)
-	if err != nil {
-		log.Error().Msgf("send document error: %v", err)
-		util.BotSendMessage(bot, update.Message.Chat.ID, message.GenericErrReplyMsg)
-		return
-	}
+	log.Info().Msgf("command handler sending document")
 	util.BotSendWrapper(bot, docMsg)
 }
 

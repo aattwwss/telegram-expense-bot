@@ -5,13 +5,14 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-// BotSendWrapper handles the error when sending a message and returns immediately
 func BotSendWrapper(bot *tgbotapi.BotAPI, chattables ...tgbotapi.Chattable) {
 	for _, c := range chattables {
-		if _, err := bot.Send(c); err != nil {
+		m, err := bot.Send(c)
+		if err != nil {
 			log.Error().Msgf("bot send chattable error: %w", err)
 			return
 		}
+		log.Info().Msgf("Chattable sent: %v", m)
 	}
 }
 
