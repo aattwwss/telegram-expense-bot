@@ -75,8 +75,10 @@ create table message_context
     created_at    timestamp with time zone not null
 );
 
+-- Take note of the newline in the reply text string
 insert into transaction_type (id, name, multiplier, display_order, reply_text)
-values (1,'🔴 Spent', -1, 2, 'You spent <b>%s</b> on <b>%s</b>');
+values (1,'🔴 Spent', -1, 2, 'You spent <b>%s</b> on <b>%s</b>
+    ');
 
 insert into category (name, transaction_type_id, display_order)
 values ('Child', 1, 1),

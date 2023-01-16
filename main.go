@@ -40,27 +40,23 @@ func handleCallback(ctx context.Context, bot *tgbotapi.BotAPI, update tgbotapi.U
 		}
 	}(update.CallbackQuery.Message.Chat.ID, update.CallbackQuery.Message.MessageID)
 
-	msg := tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, "")
 	callbackType, err := getCallbackType(update.CallbackQuery.Data)
 	if err != nil {
-		msg.Text = message.GenericErrReplyMsg
-		util.BotSendWrapper(bot, msg)
+		log.Error().Msg("handleCallback error: unrecognised callback")
+		util.BotSendMessage(bot, update.CallbackQuery.Message.Chat.ID, message.GenericErrReplyMsg)
 	}
 
 	switch callbackType {
 	case enum.Category:
-		callbackHandler.FromCategory(ctx, &msg, update.CallbackQuery)
+		callbackHandler.FromCategory(ctx, bot, update.CallbackQuery)
 	case enum.Pagination:
-		callbackHandler.FromPagination(ctx, &msg, update.CallbackQuery)
+		callbackHandler.FromPagination(ctx, bot, update.CallbackQuery)
 	case enum.Cancel:
-		callbackHandler.FromCancel(ctx, &msg, update.CallbackQuery)
-		return
+		callbackHandler.FromCancel(ctx, bot, update.CallbackQuery)
 	default:
 		log.Error().Msg("handleCallback error: unrecognised callback")
-		msg.Text = message.GenericErrReplyMsg
+		util.BotSendMessage(bot, update.CallbackQuery.Message.Chat.ID, message.GenericErrReplyMsg)
 	}
-
-	util.BotSendWrapper(bot, msg)
 }
 
 func handleMessage(ctx context.Context, bot *tgbotapi.BotAPI, update tgbotapi.Update, commandHandler *handler.CommandHandler) {
