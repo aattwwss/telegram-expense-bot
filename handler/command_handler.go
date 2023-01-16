@@ -32,7 +32,7 @@ const (
 	transactionTypeInlineColSize = 2
 
 	listDefaultPageSize   = 10
-	exportDefaultPageSize = 1
+	exportDefaultPageSize = 1000
 )
 
 type CommandHandler struct {
