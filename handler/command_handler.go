@@ -22,7 +22,7 @@ const (
 	userExistsMsg            = "Welcome back! These are the summary of your transactions: \n"
 	errorFindingUserMsg      = "Sorry there is a problem fetching your information.\n"
 	errorCreatingUserMsg     = "Sorry there is a problem signing you up.\n"
-	signUpSuccessMsg         = "Congratulations! We can get you started right away!\n"
+	signUpSuccessMsg         = "Welcome to your expense tracker!\nCongratulations! We can get you started right away!\n"
 	cannotRecogniseAmountMsg = "I don't recognise that amount of money :(\n"
 	descriptionTooLong       = "Sorry, your description (max 20 characters) is too long :( \n"
 	transactionListEmptyMsg  = "You have no transactions this month."
@@ -54,21 +54,20 @@ func NewCommandHandler(userRepo repo.UserRepo, transactionRepo repo.TransactionR
 	}
 }
 
-func (handler CommandHandler) Start(ctx context.Context, msg *tgbotapi.MessageConfig, update tgbotapi.Update) {
-	msg.Text = "Welcome to your expense tracker!\n"
+func (handler CommandHandler) Start(ctx context.Context, bot *tgbotapi.BotAPI, update tgbotapi.Update) {
 
 	teleUser := update.SentFrom()
 
 	dbUser, err := handler.userRepo.FindUserById(ctx, teleUser.ID)
 	if err != nil {
 		log.Error().Msgf("error finding user: %w", err)
-		msg.Text += errorFindingUserMsg
+		util.BotSendMessage(bot, update.Message.Chat.ID, errorFindingUserMsg)
 		return
 	}
 
 	if dbUser != nil {
 		log.Info().Msgf("User already exists. id: %v", dbUser.Id)
-		msg.Text += userExistsMsg
+		util.BotSendMessage(bot, update.Message.Chat.ID, userExistsMsg)
 		return
 	}
 
@@ -85,99 +84,104 @@ func (handler CommandHandler) Start(ctx context.Context, msg *tgbotapi.MessageCo
 	err = handler.userRepo.Add(ctx, user)
 	if err != nil {
 		log.Error().Msgf("error adding user: %w", err)
-		msg.Text += errorCreatingUserMsg
+		util.BotSendMessage(bot, update.Message.Chat.ID, errorCreatingUserMsg)
 		return
 	}
-	msg.Text += signUpSuccessMsg
-	return
+
+	msg := tgbotapi.NewMessage(update.Message.Chat.ID, signUpSuccessMsg)
+	util.BotSendWrapper(bot, msg)
 }
 
-func (handler CommandHandler) Help(ctx context.Context, msg *tgbotapi.MessageConfig, update tgbotapi.Update) {
-	msg.Text = message.HelpMsg
-	return
+func (handler CommandHandler) Help(ctx context.Context, bot *tgbotapi.BotAPI, update tgbotapi.Update) {
+	msg := tgbotapi.NewMessage(update.Message.Chat.ID, message.HelpMsg)
+	util.BotSendWrapper(bot, msg)
 }
 
-func (handler CommandHandler) Undo(ctx context.Context, msg *tgbotapi.MessageConfig, update tgbotapi.Update) {
+func (handler CommandHandler) Undo(ctx context.Context, bot *tgbotapi.BotAPI, update tgbotapi.Update) {
 	userId := update.Message.From.ID
 	latestTransaction, err := handler.transactionRepo.FindLastestByUserId(ctx, userId)
 	if err != nil {
 		log.Error().Msgf("Error finding latest transaction: %w", err)
-		msg.Text = message.GenericErrReplyMsg
+		util.BotSendMessage(bot, update.Message.Chat.ID, message.GenericErrReplyMsg)
 		return
 	}
+
 	if latestTransaction == nil {
-		msg.Text = message.TransactionLatestNotFound
-		return
+		util.BotSendMessage(bot, update.Message.Chat.ID, message.TransactionLatestNotFound)
 	}
+
 	err = handler.transactionRepo.DeleteById(ctx, latestTransaction.Id, userId)
 	if err != nil {
 		log.Error().Msgf("Error deleting latest transaction: %w", err)
-		msg.Text = message.GenericErrReplyMsg
+		util.BotSendMessage(bot, update.Message.Chat.ID, message.GenericErrReplyMsg)
 		return
 	}
-	msg.Text = fmt.Sprintf(message.TransactionDeletedReplyMsg, latestTransaction.Amount.Display(), latestTransaction.Description)
-	return
+
+	text := fmt.Sprintf(message.TransactionDeletedReplyMsg, latestTransaction.Amount.Display(), latestTransaction.Description)
+	msg := tgbotapi.NewMessage(update.Message.Chat.ID, text)
+	util.BotSendWrapper(bot, msg)
 }
 
-func (handler CommandHandler) StartTransaction(ctx context.Context, msg *tgbotapi.MessageConfig, update tgbotapi.Update) {
+func (handler CommandHandler) StartTransaction(ctx context.Context, bot *tgbotapi.BotAPI, update tgbotapi.Update) {
 	userId := update.SentFrom().ID
 	user, err := handler.userRepo.FindUserById(ctx, userId)
 	if err != nil {
 		log.Error().Msgf("Error finding user for transact: %w", err)
-		msg.Text = message.GenericErrReplyMsg
+		util.BotSendMessage(bot, update.Message.Chat.ID, message.GenericErrReplyMsg)
 		return
 	}
 	if user == nil {
 		log.Error().Msgf("User not found for transact: %w", userId)
-		msg.Text = message.GenericErrReplyMsg
+		util.BotSendMessage(bot, update.Message.Chat.ID, message.GenericErrReplyMsg)
 		return
 	}
 
 	floatString, err := util.ParseFloatStringFromString(update.Message.Text)
 	if err != nil {
 		log.Error().Msgf("%w", err)
-		msg.Text = cannotRecogniseAmountMsg
+		util.BotSendMessage(bot, update.Message.Chat.ID, cannotRecogniseAmountMsg)
 		return
 	}
 
 	stringAfter := util.After(update.Message.Text, floatString)
 	if len(strings.TrimSpace(stringAfter)) > 20 {
-		msg.Text = descriptionTooLong
+		util.BotSendMessage(bot, update.Message.Chat.ID, descriptionTooLong)
 		return
 	}
 
 	contextId, err := handler.messageContextRepo.Add(ctx, update.Message.Chat.ID, update.Message.MessageID, update.Message.Text)
 	if err != nil {
 		log.Error().Msgf("Add message context error: %w", err)
-		msg.Text = message.GenericErrReplyMsg
+		util.BotSendMessage(bot, update.Message.Chat.ID, message.GenericErrReplyMsg)
 		return
 	}
 
 	categories, err := handler.categoryRepo.FindAll(ctx)
 	if err != nil {
 		log.Error().Msgf("FindAll categories error: %w", err)
-		msg.Text = message.GenericErrReplyMsg
+		util.BotSendMessage(bot, update.Message.Chat.ID, message.GenericErrReplyMsg)
 		return
 	}
 
 	inlineKeyboard, err := newCategoriesKeyboard(categories, contextId, categoriesInlineColSize)
 	if err != nil {
 		log.Error().Msgf("newCategoriesKeyboard error: %w", err)
-		msg.Text = message.GenericErrReplyMsg
+		util.BotSendMessage(bot, update.Message.Chat.ID, message.GenericErrReplyMsg)
 		return
 	}
 
-	msg.Text = message.TransactionTypeReplyMsg
+	msg := tgbotapi.NewMessage(update.Message.Chat.ID, message.TransactionTypeReplyMsg)
 	msg.ReplyMarkup = tgbotapi.InlineKeyboardMarkup{InlineKeyboard: inlineKeyboard}
-
+	util.BotSendWrapper(bot, msg)
 }
 
-func (handler CommandHandler) Stats(ctx context.Context, msg *tgbotapi.MessageConfig, update tgbotapi.Update) {
+func (handler CommandHandler) Stats(ctx context.Context, bot *tgbotapi.BotAPI, update tgbotapi.Update) {
+	var text string
 	userId := update.SentFrom().ID
 	user, err := handler.userRepo.FindUserById(ctx, userId)
 	if err != nil {
 		log.Error().Msgf("Error finding user for stats: %w", err)
-		msg.Text = message.GenericErrReplyMsg
+		util.BotSendMessage(bot, update.Message.Chat.ID, message.GenericErrReplyMsg)
 		return
 	}
 
@@ -187,31 +191,32 @@ func (handler CommandHandler) Stats(ctx context.Context, msg *tgbotapi.MessageCo
 
 	if err != nil {
 		log.Error().Msgf("Error getting breakdowns: %w", err)
-		msg.Text = message.GenericErrReplyMsg
+		util.BotSendMessage(bot, update.Message.Chat.ID, message.GenericErrReplyMsg)
 		return
 	}
 
 	header := fmt.Sprintf(statsHeaderHTMLMsg, month.String(), year, total.Display())
-	msg.Text = header + breakdowns.GetFormattedHTMLMsg()
+	text = header + breakdowns.GetFormattedHTMLMsg()
+	msg := tgbotapi.NewMessage(update.Message.Chat.ID, text)
 	msg.ParseMode = tgbotapi.ModeHTML
-	return
+	util.BotSendWrapper(bot, msg)
 }
 
-func (handler CommandHandler) List(ctx context.Context, msg *tgbotapi.MessageConfig, update tgbotapi.Update) {
+func (handler CommandHandler) List(ctx context.Context, bot *tgbotapi.BotAPI, update tgbotapi.Update) {
 	pageSize := transactionListDefaultPageSize
-
+	var text string
 	userId := update.SentFrom().ID
 	user, err := handler.userRepo.FindUserById(ctx, userId)
 	if err != nil {
 		log.Error().Msgf("Error finding user for stats: %w", err)
-		msg.Text = message.GenericErrReplyMsg
+		util.BotSendMessage(bot, update.Message.Chat.ID, message.GenericErrReplyMsg)
 		return
 	}
 
 	contextId, err := handler.messageContextRepo.Add(ctx, update.Message.Chat.ID, update.Message.MessageID, update.Message.Text)
 	if err != nil {
 		log.Error().Msgf("Add message context error: %w", err)
-		msg.Text = message.GenericErrReplyMsg
+		util.BotSendMessage(bot, update.Message.Chat.ID, message.GenericErrReplyMsg)
 		return
 	}
 
@@ -220,35 +225,36 @@ func (handler CommandHandler) List(ctx context.Context, msg *tgbotapi.MessageCon
 	transactions, totalCount, err := handler.transactionRepo.ListByMonthAndYear(ctx, month, year, 0, pageSize, *user)
 	if err != nil {
 		log.Error().Msgf("Error getting list of transactions: %w", err)
-		msg.Text = message.GenericErrReplyMsg
+		util.BotSendMessage(bot, update.Message.Chat.ID, message.GenericErrReplyMsg)
 		return
 	}
 	if totalCount == 0 {
-		msg.Text = transactionListEmptyMsg
+		util.BotSendMessage(bot, update.Message.Chat.ID, transactionListEmptyMsg)
 		return
 	}
 
 	inlineKeyboard, err := util.NewPaginationKeyboard(totalCount, 0, pageSize, contextId, 2)
 	if err != nil {
 		log.Error().Msgf("Error generating keyboard for transaction pagination: %w", err)
-		msg.Text = message.GenericErrReplyMsg
+		util.BotSendMessage(bot, update.Message.Chat.ID, message.GenericErrReplyMsg)
 		return
 	}
-	msg.ReplyMarkup = tgbotapi.InlineKeyboardMarkup{InlineKeyboard: inlineKeyboard}
 
-	msg.Text = transactions.GetFormattedHTMLMsg(month, year, user.Location, totalCount, 0, pageSize)
+	text += transactions.GetFormattedHTMLMsg(month, year, user.Location, totalCount, 0, pageSize)
+	msg := tgbotapi.NewMessage(update.Message.Chat.ID, text)
+	msg.ReplyMarkup = tgbotapi.InlineKeyboardMarkup{InlineKeyboard: inlineKeyboard}
 	msg.ParseMode = tgbotapi.ModeHTML
-	return
+	util.BotSendWrapper(bot, msg)
 }
 
-func (handler CommandHandler) Export(ctx context.Context, bot *tgbotapi.BotAPI, msg *tgbotapi.MessageConfig, update tgbotapi.Update) {
+func (handler CommandHandler) Export(ctx context.Context, bot *tgbotapi.BotAPI, update tgbotapi.Update) {
 	pageSize := transactionListDefaultPageSize
 
 	userId := update.SentFrom().ID
 	user, err := handler.userRepo.FindUserById(ctx, userId)
 	if err != nil {
 		log.Error().Msgf("Error finding user for stats: %v", err)
-		msg.Text = message.GenericErrReplyMsg
+		util.BotSendMessage(bot, update.Message.Chat.ID, message.GenericErrReplyMsg)
 		return
 	}
 
@@ -268,7 +274,7 @@ func (handler CommandHandler) Export(ctx context.Context, bot *tgbotapi.BotAPI, 
 		}
 		if err != nil {
 			log.Error().Msgf("Error finding listing transactions for export: %v", err)
-			msg.Text = message.GenericErrReplyMsg
+			util.BotSendMessage(bot, update.Message.Chat.ID, message.GenericErrReplyMsg)
 			return
 		}
 		for _, t := range transactions {
@@ -278,13 +284,16 @@ func (handler CommandHandler) Export(ctx context.Context, bot *tgbotapi.BotAPI, 
 		}
 		offset += pageSize
 	}
+
 	docMsg := tgbotapi.NewDocument(update.Message.Chat.ID, tgbotapi.FilePath(f.Name()))
+	docMsg.Caption = fmt.Sprintf("Exported expenses for %s %v", month.String(), year)
 	_, err = bot.Send(docMsg)
 	if err != nil {
 		log.Error().Msgf("send document error: %v", err)
+		util.BotSendMessage(bot, update.Message.Chat.ID, message.GenericErrReplyMsg)
+		return
 	}
-
-	msg.Text = fmt.Sprintf("Exported expenses for %s %v", month.String(), year)
+	util.BotSendWrapper(bot, docMsg)
 }
 
 func newTransactionTypesKeyboard(transactionTypes []domain.TransactionType, messageContextId int, colSize int) ([][]tgbotapi.InlineKeyboardButton, error) {

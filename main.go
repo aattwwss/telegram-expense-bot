@@ -22,12 +22,6 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-func botSend(bot *tgbotapi.BotAPI, msg tgbotapi.MessageConfig) {
-	if _, err := bot.Send(msg); err != nil {
-		log.Error().Msgf("handleCallback error: %w", err)
-	}
-}
-
 func getCallbackType(callbackData string) (enum.CallbackType, error) {
 	var genericCallback domain.GenericCallback
 	err := json.Unmarshal([]byte(callbackData), &genericCallback)
@@ -50,7 +44,7 @@ func handleCallback(ctx context.Context, bot *tgbotapi.BotAPI, update tgbotapi.U
 	callbackType, err := getCallbackType(update.CallbackQuery.Data)
 	if err != nil {
 		msg.Text = message.GenericErrReplyMsg
-		botSend(bot, msg)
+		util.BotSendWrapper(bot, msg)
 	}
 
 	switch callbackType {
@@ -66,34 +60,32 @@ func handleCallback(ctx context.Context, bot *tgbotapi.BotAPI, update tgbotapi.U
 		msg.Text = message.GenericErrReplyMsg
 	}
 
-	botSend(bot, msg)
+	util.BotSendWrapper(bot, msg)
 }
 
 func handleMessage(ctx context.Context, bot *tgbotapi.BotAPI, update tgbotapi.Update, commandHandler *handler.CommandHandler) {
 	log.Info().Msgf("Received: %v", update.Message.Text)
 
-	msg := tgbotapi.NewMessage(update.Message.Chat.ID, "")
 	if update.Message.IsCommand() {
 		switch update.Message.Command() {
 		case "start":
-			commandHandler.Start(ctx, &msg, update)
+			commandHandler.Start(ctx, bot, update)
 		case "help":
-			commandHandler.Help(ctx, &msg, update)
+			commandHandler.Help(ctx, bot, update)
 		case "stats":
-			commandHandler.Stats(ctx, &msg, update)
+			commandHandler.Stats(ctx, bot, update)
 		case "undo":
-			commandHandler.Undo(ctx, &msg, update)
+			commandHandler.Undo(ctx, bot, update)
 		case "list":
-			commandHandler.List(ctx, &msg, update)
+			commandHandler.List(ctx, bot, update)
 		case "export":
-			commandHandler.Export(ctx, bot, &msg, update)
+			commandHandler.Export(ctx, bot, update)
 		default:
-			commandHandler.Help(ctx, &msg, update)
+			commandHandler.Help(ctx, bot, update)
 		}
 	} else {
-		commandHandler.StartTransaction(ctx, &msg, update)
+		commandHandler.StartTransaction(ctx, bot, update)
 	}
-	botSend(bot, msg)
 }
 
 func loadEnv() error {
