@@ -40,12 +40,12 @@ func NewCallbackHandler(userRepo repo.UserRepo, transactionRepo repo.Transaction
 	}
 }
 
-func (handler CallbackHandler) FromCategory(ctx context.Context, msg *tgbotapi.MessageConfig, callbackQuery *tgbotapi.CallbackQuery) {
+func (handler CallbackHandler) FromCategory(ctx context.Context, bot *tgbotapi.BotAPI, callbackQuery *tgbotapi.CallbackQuery) {
 	var categoryCallback domain.CategoryCallback
 	err := json.Unmarshal([]byte(callbackQuery.Data), &categoryCallback)
 	if err != nil {
 		log.Error().Msgf("FromCategory unmarshall error: %w", err)
-		msg.Text = message.GenericErrReplyMsg
+		util.BotSendMessage(bot, callbackQuery.Message.Chat.ID, message.GenericErrReplyMsg)
 		return
 	}
 
@@ -54,27 +54,27 @@ func (handler CallbackHandler) FromCategory(ctx context.Context, msg *tgbotapi.M
 	category, err := handler.categoryRepo.GetById(ctx, categoryCallback.CategoryId)
 	if err != nil {
 		log.Error().Msgf("Get category by id error: %w", err)
-		msg.Text = message.GenericErrReplyMsg
+		util.BotSendMessage(bot, callbackQuery.Message.Chat.ID, message.GenericErrReplyMsg)
 		return
 	}
 
 	messageContext, err := handler.messageContextRepo.GetMessageById(ctx, categoryCallback.Callback.MessageContextId)
 	if err != nil {
 		log.Error().Msgf("Get message context by id error: %w", err)
-		msg.Text = message.GenericErrReplyMsg
+		util.BotSendMessage(bot, callbackQuery.Message.Chat.ID, message.GenericErrReplyMsg)
 		return
 	}
 
 	amountString, err := util.ParseFloatStringFromString(messageContext)
 	if err != nil {
 		log.Error().Msgf("%w", err)
-		msg.Text = message.GenericErrReplyMsg
+		util.BotSendMessage(bot, callbackQuery.Message.Chat.ID, message.GenericErrReplyMsg)
 		return
 	}
 
 	amountFloat, err := strconv.ParseFloat(amountString, 64)
 	if err != nil {
-		msg.Text = message.GenericErrReplyMsg
+		util.BotSendMessage(bot, callbackQuery.Message.Chat.ID, message.GenericErrReplyMsg)
 		return
 	}
 
@@ -94,30 +94,31 @@ func (handler CallbackHandler) FromCategory(ctx context.Context, msg *tgbotapi.M
 	err = handler.transactionRepo.Add(ctx, transaction)
 	if err != nil {
 		log.Error().Msgf("FromCategory error: %w", err)
-		msg.Text = message.GenericErrReplyMsg
+		util.BotSendMessage(bot, callbackQuery.Message.Chat.ID, message.GenericErrReplyMsg)
 		return
 	}
 
 	transactionType, err := handler.transactionTypeRepo.GetById(ctx, category.TransactionTypeId)
 	if err != nil {
 		log.Error().Msgf("FromCategory error: %w", err)
-		msg.Text = message.GenericErrReplyMsg
+		util.BotSendMessage(bot, callbackQuery.Message.Chat.ID, message.GenericErrReplyMsg)
 		return
 	}
 
-	text := fmt.Sprintf(transactionType.ReplyText, moneyTransacted.Display(), category.Name) + "\n"
+	text := fmt.Sprintf(transactionType.ReplyText, moneyTransacted.Display(), category.Name)
 	text += fmt.Sprintf(message.TransactionEndReplyMsg, description)
-	msg.Text = text
+	msg := tgbotapi.NewMessage(callbackQuery.Message.Chat.ID, text)
 	msg.ParseMode = tgbotapi.ModeHTML
+	util.BotSendWrapper(bot, msg)
 }
 
-func (handler CallbackHandler) FromPagination(ctx context.Context, msg *tgbotapi.MessageConfig, callbackQuery *tgbotapi.CallbackQuery) {
+func (handler CallbackHandler) FromPagination(ctx context.Context, bot *tgbotapi.BotAPI, callbackQuery *tgbotapi.CallbackQuery) {
 	// TODO Find a way to handle the peristing context when paginating
 	userId := callbackQuery.From.ID
 	user, err := handler.userRepo.FindUserById(ctx, userId)
 	if err != nil {
 		log.Error().Msgf("Error finding user for stats: %w", err)
-		msg.Text = message.GenericErrReplyMsg
+		util.BotSendMessage(bot, callbackQuery.Message.Chat.ID, message.GenericErrReplyMsg)
 		return
 	}
 
@@ -125,13 +126,14 @@ func (handler CallbackHandler) FromPagination(ctx context.Context, msg *tgbotapi
 	err = json.Unmarshal([]byte(callbackQuery.Data), &paginationCallback)
 	if err != nil {
 		log.Error().Msgf("FromPagination unmarshall error: %w", err)
+		util.BotSendMessage(bot, callbackQuery.Message.Chat.ID, message.GenericErrReplyMsg)
 		return
 	}
 
 	messageContext, err := handler.messageContextRepo.GetMessageById(ctx, paginationCallback.Callback.MessageContextId)
 	if err != nil {
 		log.Error().Msgf("Get message context by id error: %w", err)
-		msg.Text = message.GenericErrReplyMsg
+		util.BotSendMessage(bot, callbackQuery.Message.Chat.ID, message.GenericErrReplyMsg)
 		return
 	}
 
@@ -143,16 +145,18 @@ func (handler CallbackHandler) FromPagination(ctx context.Context, msg *tgbotapi
 	inlineKeyboard, err := util.NewPaginationKeyboard(totalCount, offset, limit, paginationCallback.MessageContextId, 2)
 	if err != nil {
 		log.Error().Msgf("Error generating keyboard for transaction pagination: %w", err)
-		msg.Text = message.GenericErrReplyMsg
+		util.BotSendMessage(bot, callbackQuery.Message.Chat.ID, message.GenericErrReplyMsg)
 		return
 	}
-	msg.ReplyMarkup = tgbotapi.InlineKeyboardMarkup{InlineKeyboard: inlineKeyboard}
 
-	msg.Text = transactions.GetFormattedHTMLMsg(month, year, user.Location, totalCount, offset, limit)
+	text := transactions.GetFormattedHTMLMsg(month, year, user.Location, totalCount, offset, limit)
+	msg := tgbotapi.NewMessage(callbackQuery.Message.Chat.ID, text)
+	msg.ReplyMarkup = tgbotapi.InlineKeyboardMarkup{InlineKeyboard: inlineKeyboard}
 	msg.ParseMode = tgbotapi.ModeHTML
+	util.BotSendWrapper(bot, msg)
 }
 
-func (handler CallbackHandler) FromCancel(ctx context.Context, msg *tgbotapi.MessageConfig, callbackQuery *tgbotapi.CallbackQuery) {
+func (handler CallbackHandler) FromCancel(ctx context.Context, bot *tgbotapi.BotAPI, callbackQuery *tgbotapi.CallbackQuery) {
 
 	var genericCallback domain.GenericCallback
 	err := json.Unmarshal([]byte(callbackQuery.Data), &genericCallback)

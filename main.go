@@ -22,12 +22,6 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-func botSend(bot *tgbotapi.BotAPI, msg tgbotapi.MessageConfig) {
-	if _, err := bot.Send(msg); err != nil {
-		log.Error().Msgf("handleCallback error: %w", err)
-	}
-}
-
 func getCallbackType(callbackData string) (enum.CallbackType, error) {
 	var genericCallback domain.GenericCallback
 	err := json.Unmarshal([]byte(callbackData), &genericCallback)
@@ -46,54 +40,48 @@ func handleCallback(ctx context.Context, bot *tgbotapi.BotAPI, update tgbotapi.U
 		}
 	}(update.CallbackQuery.Message.Chat.ID, update.CallbackQuery.Message.MessageID)
 
-	msg := tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, "")
 	callbackType, err := getCallbackType(update.CallbackQuery.Data)
 	if err != nil {
-		msg.Text = message.GenericErrReplyMsg
-		botSend(bot, msg)
+		log.Error().Msg("handleCallback error: unrecognised callback")
+		util.BotSendMessage(bot, update.CallbackQuery.Message.Chat.ID, message.GenericErrReplyMsg)
 	}
 
 	switch callbackType {
 	case enum.Category:
-		callbackHandler.FromCategory(ctx, &msg, update.CallbackQuery)
+		callbackHandler.FromCategory(ctx, bot, update.CallbackQuery)
 	case enum.Pagination:
-		callbackHandler.FromPagination(ctx, &msg, update.CallbackQuery)
+		callbackHandler.FromPagination(ctx, bot, update.CallbackQuery)
 	case enum.Cancel:
-		callbackHandler.FromCancel(ctx, &msg, update.CallbackQuery)
-		return
+		callbackHandler.FromCancel(ctx, bot, update.CallbackQuery)
 	default:
 		log.Error().Msg("handleCallback error: unrecognised callback")
-		msg.Text = message.GenericErrReplyMsg
+		util.BotSendMessage(bot, update.CallbackQuery.Message.Chat.ID, message.GenericErrReplyMsg)
 	}
-
-	botSend(bot, msg)
 }
 
 func handleMessage(ctx context.Context, bot *tgbotapi.BotAPI, update tgbotapi.Update, commandHandler *handler.CommandHandler) {
 	log.Info().Msgf("Received: %v", update.Message.Text)
 
-	msg := tgbotapi.NewMessage(update.Message.Chat.ID, "")
 	if update.Message.IsCommand() {
 		switch update.Message.Command() {
 		case "start":
-			commandHandler.Start(ctx, &msg, update)
+			commandHandler.Start(ctx, bot, update)
 		case "help":
-			commandHandler.Help(ctx, &msg, update)
+			commandHandler.Help(ctx, bot, update)
 		case "stats":
-			commandHandler.Stats(ctx, &msg, update)
+			commandHandler.Stats(ctx, bot, update)
 		case "undo":
-			commandHandler.Undo(ctx, &msg, update)
+			commandHandler.Undo(ctx, bot, update)
 		case "list":
-			commandHandler.List(ctx, &msg, update)
+			commandHandler.List(ctx, bot, update)
 		case "export":
-			commandHandler.Export(ctx, bot, &msg, update)
+			commandHandler.Export(ctx, bot, update)
 		default:
-			commandHandler.Help(ctx, &msg, update)
+			commandHandler.Help(ctx, bot, update)
 		}
 	} else {
-		commandHandler.StartTransaction(ctx, &msg, update)
+		commandHandler.StartTransaction(ctx, bot, update)
 	}
-	botSend(bot, msg)
 }
 
 func loadEnv() error {
