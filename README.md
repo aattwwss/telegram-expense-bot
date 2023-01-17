@@ -57,15 +57,14 @@ This bot does not store any personal information other than your telegram user i
 - [x] View transactions by using /list command
 - [ ] Allow user to change timezone. (default Asia/Singapore)
 - [ ] Allow user to change currency. (default SGD)
-- [ ] Export transactions to file
+- [x] Export transactions to file
 
 # Dev / Infra 
 - [ ] Fix image deployed on github container repository not reachable by telegram server
 
 # Optimisation 
-- [ ] Don't return cancel button when next and prev button is not returned. (for transaction list)
-- [ ] Show page number in transaction list
-- [ ] Reconsider the formatting in transaction list to differentiate each transaction better
+- [x] Don't return cancel button when next and prev button is not returned. (for transaction list)
+- [x] Show page number in transaction list
 - [ ] Delete message context stored in database after a period of time
 - [ ] Store data of inline keyboard somewhere else to bypass the 64 bytes size limit
 
