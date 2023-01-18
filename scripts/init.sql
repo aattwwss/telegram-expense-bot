@@ -35,7 +35,9 @@ create table app_user
     currency char(3)     default 'SGD'::bpchar                       not null
         constraint user_currency_fk
             references currency,
-    timezone varchar(30) default 'Asia/Singapore'::character varying not null
+    timezone varchar(30) default 'Asia/Singapore'::character varying not null,
+    create_time    timestamp with time zone not null default NOW(),
+    update_time    timestamp with time zone not null default NOW()
 );
 
 create table category
