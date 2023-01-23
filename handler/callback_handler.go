@@ -140,7 +140,7 @@ func (handler CallbackHandler) FromPagination(ctx context.Context, bot *tgbotapi
 	month, year := util.ParseMonthYearFromMessage(messageContext)
 
 	offset, limit := paginationCallback.Offset, paginationCallback.Limit
-	transactions, totalCount, err := handler.transactionRepo.ListByMonthAndYear(ctx, month, year, offset, limit, *user)
+	transactions, totalCount, err := handler.transactionRepo.ListByMonthAndYear(ctx, month, year, offset, limit, enum.DESC, *user)
 
 	inlineKeyboard, err := util.NewPaginationKeyboard(totalCount, offset, limit, paginationCallback.MessageContextId, 2)
 	if err != nil {

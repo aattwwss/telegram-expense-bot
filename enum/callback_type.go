@@ -2,6 +2,7 @@ package enum
 
 type CallbackType string
 type PaginateAction string
+type SortOrder string
 
 const (
 	TransactionType CallbackType = "TransactionType"
@@ -11,4 +12,7 @@ const (
 
 	Next     PaginateAction = "Next"
 	Previous PaginateAction = "Prev"
+
+	ASC  SortOrder = "ASC"
+	DESC SortOrder = "DESC"
 )
