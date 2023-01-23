@@ -2,9 +2,11 @@ package dao
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/aattwwss/telegram-expense-bot/entity"
+	"github.com/aattwwss/telegram-expense-bot/enum"
 	"github.com/georgysavva/scany/v2/pgxscan"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -93,7 +95,7 @@ func (dao TransactionDAO) GetBreakdownByCategory(ctx context.Context, dateFrom t
 	return entities, nil
 }
 
-func (dao TransactionDAO) ListByMonthAndYear(ctx context.Context, dateFrom time.Time, dateTo time.Time, offset int, limit int, userId int64) ([]entity.Transaction, error) {
+func (dao TransactionDAO) ListByMonthAndYear(ctx context.Context, dateFrom time.Time, dateTo time.Time, offset int, limit int, sortOrder enum.SortOrder, userId int64) ([]entity.Transaction, error) {
 	var entities []entity.Transaction
 	sql := `
 			SELECT t.id, t.datetime, t.category_id, t.description, t.user_id, t.amount, t.currency, c.name as category_name
@@ -101,9 +103,11 @@ func (dao TransactionDAO) ListByMonthAndYear(ctx context.Context, dateFrom time.
 		    WHERE t.datetime >= $1::timestamptz
 			  AND t.datetime < $2::timestamptz
 			  AND t.user_id = $3
-		    ORDER BY t.datetime DESC
+		    ORDER BY t.datetime %s 
 			OFFSET $4 LIMIT $5
 		`
+	//TODO this is probably dangerous? Need to think of a better way to dynamically order the list
+	sql = fmt.Sprintf(sql, sortOrder)
 	err := pgxscan.Select(ctx, dao.db, &entities, sql, dateFrom.Format(time.RFC3339), dateTo.Format(time.RFC3339), userId, offset, limit)
 	if err != nil {
 		return nil, err

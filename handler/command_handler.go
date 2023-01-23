@@ -221,7 +221,7 @@ func (handler CommandHandler) List(ctx context.Context, bot *tgbotapi.BotAPI, up
 
 	month, year := util.ParseMonthYearFromMessage(update.Message.Text)
 
-	transactions, totalCount, err := handler.transactionRepo.ListByMonthAndYear(ctx, month, year, 0, pageSize, *user)
+	transactions, totalCount, err := handler.transactionRepo.ListByMonthAndYear(ctx, month, year, 0, pageSize, enum.DESC, *user)
 	if err != nil {
 		log.Error().Msgf("Error getting list of transactions: %w", err)
 		util.BotSendMessage(bot, update.Message.Chat.ID, message.GenericErrReplyMsg)
@@ -267,7 +267,7 @@ func (handler CommandHandler) Export(ctx context.Context, bot *tgbotapi.BotAPI, 
 
 	offset := 0
 	for {
-		transactions, totalCount, err := handler.transactionRepo.ListByMonthAndYear(ctx, month, year, offset, pageSize, *user)
+		transactions, totalCount, err := handler.transactionRepo.ListByMonthAndYear(ctx, month, year, offset, pageSize, enum.ASC, *user)
 		if offset > totalCount {
 			break
 		}
@@ -277,7 +277,13 @@ func (handler CommandHandler) Export(ctx context.Context, bot *tgbotapi.BotAPI, 
 			return
 		}
 		for _, t := range transactions {
-			data := []string{t.Datetime.String(), t.CategoryName, fmt.Sprintf("%v", t.Amount.AsMajorUnits()), t.Amount.Currency().Code}
+			data := []string{
+				t.Datetime.String(),
+				t.CategoryName,
+				fmt.Sprintf("%v", t.Amount.AsMajorUnits()),
+				t.Amount.Currency().Code,
+				t.Description,
+			}
 			csvWriter.Write(data)
 			csvWriter.Flush()
 		}
