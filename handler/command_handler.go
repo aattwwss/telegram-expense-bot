@@ -277,7 +277,13 @@ func (handler CommandHandler) Export(ctx context.Context, bot *tgbotapi.BotAPI, 
 			return
 		}
 		for _, t := range transactions {
-			data := []string{t.Datetime.String(), t.CategoryName, fmt.Sprintf("%v", t.Amount.AsMajorUnits()), t.Amount.Currency().Code}
+			data := []string{
+				t.Datetime.String(),
+				t.CategoryName,
+				fmt.Sprintf("%v", t.Amount.AsMajorUnits()),
+				t.Amount.Currency().Code,
+				t.Description,
+			}
 			csvWriter.Write(data)
 			csvWriter.Flush()
 		}
