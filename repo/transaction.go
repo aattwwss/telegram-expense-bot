@@ -10,7 +10,6 @@ import (
 	"github.com/aattwwss/telegram-expense-bot/dao"
 	"github.com/aattwwss/telegram-expense-bot/domain"
 	"github.com/aattwwss/telegram-expense-bot/entity"
-	"github.com/aattwwss/telegram-expense-bot/enum"
 )
 
 type TransactionRepo struct {
@@ -127,7 +126,7 @@ func (repo TransactionRepo) GetTransactionBreakdownByCategory(ctx context.Contex
 	return breakdowns, money.New(totalAmount, user.Currency.Code), nil
 }
 
-func (repo TransactionRepo) ListByMonthAndYear(ctx context.Context, month time.Month, year int, offset int, limit int, sortOrder enum.SortOrder, user domain.User) (domain.Transactions, int, error) {
+func (repo TransactionRepo) ListByMonthAndYear(ctx context.Context, month time.Month, year int, offset int, limit int, isAsc bool, user domain.User) (domain.Transactions, int, error) {
 	var transactions domain.Transactions
 
 	dateFromString := fmt.Sprintf("%v-%02d-01", year, int(month))
@@ -147,7 +146,7 @@ func (repo TransactionRepo) ListByMonthAndYear(ctx context.Context, month time.M
 		return transactions, totalCount, nil
 	}
 
-	entities, err := repo.transactionDao.ListByMonthAndYear(ctx, dateFrom, dateTo, offset, limit, sortOrder, user.Id)
+	entities, err := repo.transactionDao.ListByMonthAndYear(ctx, dateFrom, dateTo, offset, limit, isAsc, user.Id)
 	if err != nil {
 		return transactions, 0, err
 	}
