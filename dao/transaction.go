@@ -28,7 +28,7 @@ func (dao TransactionDAO) GetById(ctx context.Context, id int, userId int64) (en
 	sql := `
 			SELECT t.id, t.datetime, t.category_id, t.description, t.user_id, t.amount, t.currency, c.name as category_name
 			FROM transaction t JOIN category c on t.category_id = c.id
-			WHERE id = $1 and user_id = $2
+			WHERE t.id = $1 and t.user_id = $2
 			`
 	err := pgxscan.Select(ctx, dao.db, &transactions, sql, id, userId)
 	if err != nil {

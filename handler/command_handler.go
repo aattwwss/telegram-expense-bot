@@ -111,15 +111,23 @@ func (handler CommandHandler) Undo(ctx context.Context, bot *tgbotapi.BotAPI, up
 		util.BotSendMessage(bot, update.Message.Chat.ID, message.TransactionLatestNotFound)
 	}
 
-	err = handler.transactionRepo.DeleteById(ctx, latestTransaction.Id, userId)
+	contextId, err := handler.messageContextRepo.Add(ctx, update.Message.Chat.ID, update.Message.MessageID, update.Message.Text)
 	if err != nil {
-		log.Error().Msgf("Error deleting latest transaction: %w", err)
+		log.Error().Msgf("Add message context error: %w", err)
 		util.BotSendMessage(bot, update.Message.Chat.ID, message.GenericErrReplyMsg)
 		return
 	}
 
-	text := fmt.Sprintf(message.TransactionDeletedReplyMsg, latestTransaction.Amount.Display(), latestTransaction.Description)
+	inlineKeyboard, err := util.NewUndoConfirmationKeyboard(latestTransaction.Id, contextId, 1)
+	if err != nil {
+		log.Error().Msgf("NewUndoConfirmationKeyboard error: %w", err)
+		util.BotSendMessage(bot, update.Message.Chat.ID, message.GenericErrReplyMsg)
+		return
+	}
+
+	text := fmt.Sprintf(message.TransactionDeleteConfirmationMsg, latestTransaction.Amount.Display(), latestTransaction.Description)
 	msg := tgbotapi.NewMessage(update.Message.Chat.ID, text)
+	msg.ReplyMarkup = tgbotapi.InlineKeyboardMarkup{InlineKeyboard: inlineKeyboard}
 	util.BotSendWrapper(bot, msg)
 }
 
