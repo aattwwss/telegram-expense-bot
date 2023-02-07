@@ -51,6 +51,8 @@ func handleCallback(ctx context.Context, bot *tgbotapi.BotAPI, update tgbotapi.U
 		callbackHandler.FromCategory(ctx, bot, update.CallbackQuery)
 	case enum.Pagination:
 		callbackHandler.FromPagination(ctx, bot, update.CallbackQuery)
+	case enum.Undo:
+		callbackHandler.FromUndo(ctx, bot, update.CallbackQuery)
 	case enum.Cancel:
 		callbackHandler.FromCancel(ctx, bot, update.CallbackQuery)
 	default:

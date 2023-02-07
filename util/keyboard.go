@@ -13,6 +13,23 @@ type InlineKeyboardConfig struct {
 	data  string
 }
 
+func NewUndoConfirmationKeyboard(transactionId int, messageContextId int, colSize int) ([][]tgbotapi.InlineKeyboardButton, error) {
+	var configs []InlineKeyboardConfig
+	undoButton := domain.UndoCallback{
+		Callback: domain.Callback{
+			Type:             enum.Undo,
+			MessageContextId: messageContextId,
+		},
+		TransactionId: transactionId,
+	}
+	undoButtonJson, err := ToJson(undoButton)
+	if err != nil {
+		return nil, err
+	}
+	configs = append(configs, NewInlineKeyboardConfig("Yes", undoButtonJson))
+	return NewInlineKeyboard(configs, messageContextId, colSize, true), nil
+}
+
 func NewPaginationKeyboard(totalCount int, currentOffset int, limit int, messageContextId int, colSize int) ([][]tgbotapi.InlineKeyboardButton, error) {
 	var configs []InlineKeyboardConfig
 

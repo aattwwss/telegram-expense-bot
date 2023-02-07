@@ -27,3 +27,8 @@ type PaginationCallback struct {
 	Offset   int                 `json:"o"`
 	Limit    int                 `json:"l"`
 }
+
+type UndoCallback struct {
+	Callback      `json:"c"`
+	TransactionId int `json:"t"`
+}

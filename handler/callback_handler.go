@@ -156,6 +156,36 @@ func (handler CallbackHandler) FromPagination(ctx context.Context, bot *tgbotapi
 	util.BotSendWrapper(bot, msg)
 }
 
+func (handler CallbackHandler) FromUndo(ctx context.Context, bot *tgbotapi.BotAPI, callbackQuery *tgbotapi.CallbackQuery) {
+	userId := callbackQuery.From.ID
+	var undoCallback domain.UndoCallback
+
+	err := json.Unmarshal([]byte(callbackQuery.Data), &undoCallback)
+	if err != nil {
+		log.Error().Msgf("FromUndo unmarshall error: %w", err)
+		return
+	}
+	log.Info().Msgf("transaction: %v", undoCallback.TransactionId)
+
+	transaction, err := handler.transactionRepo.GetById(ctx, undoCallback.TransactionId, userId)
+	if err != nil {
+		log.Error().Msgf("FromUndo cannot find transaction error: %w", err)
+		util.BotSendMessage(bot, callbackQuery.Message.Chat.ID, message.GenericErrReplyMsg)
+		return
+	}
+
+	err = handler.transactionRepo.DeleteById(ctx, undoCallback.TransactionId, userId)
+	if err != nil {
+		log.Error().Msgf("Error deleting latest transaction: %w", err)
+		util.BotSendMessage(bot, callbackQuery.Message.Chat.ID, message.GenericErrReplyMsg)
+		return
+	}
+
+	text := fmt.Sprintf(message.TransactionDeletedReplyMsg, transaction.Amount.Display(), transaction.Description)
+	msg := tgbotapi.NewMessage(callbackQuery.Message.Chat.ID, text)
+	util.BotSendWrapper(bot, msg)
+}
+
 func (handler CallbackHandler) FromCancel(ctx context.Context, bot *tgbotapi.BotAPI, callbackQuery *tgbotapi.CallbackQuery) {
 
 	var genericCallback domain.GenericCallback
