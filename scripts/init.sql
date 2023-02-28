@@ -85,8 +85,8 @@ values (1,'🔴 Spent', -1, 2, 'You spent <b>%s</b> on <b>%s</b>
 insert into category (name, transaction_type_id, display_order)
 values ('Child', 1, 1),
        ('Education', 1, 2),
-       ('Entertainment', 1, 3),
-       ('Food', 1, 4),
+       ('Food', 1, 3),
+       ('Fun', 1, 4),
        ('Gifts', 1, 5),
        ('Health', 1, 6),
        ('Housing', 1, 7),
