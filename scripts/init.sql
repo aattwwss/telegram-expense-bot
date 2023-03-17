@@ -57,7 +57,7 @@ create table transaction
     datetime    timestamp with time zone not null,
     category_id integer                  not null
         references category,
-    description text                     not null,
+    description text default ''          not null,
     user_id     bigint                   not null
         references app_user,
     amount      bigint  default 0        not null,
