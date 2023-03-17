@@ -72,3 +72,6 @@ This bot does not store any personal information other than your telegram user i
 - [x] Consolidate SQL to the latest schema
 - [x] Prepare docker compose for self hosted guide
 - [x] Prepare self hosted guide
+
+# Support
+If you have any questions or problems, email me at telegram.expense.bot@gmail.com
