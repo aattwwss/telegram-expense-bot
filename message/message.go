@@ -24,6 +24,8 @@ E.g. "/list Feb 2022".
 E.g. "/list February 2022".
 
 Stats and export follow the same rules as well!
+
+If you have any questions or problems, email me at telegram.expense.bot@gmail.com
 `
 
 	TransactionTypeReplyMsg          = "Select a transaction type"
