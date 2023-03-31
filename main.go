@@ -32,17 +32,9 @@ func getCallbackType(callbackData string) (enum.CallbackType, error) {
 }
 
 func handleCallback(ctx context.Context, bot *tgbotapi.BotAPI, update tgbotapi.Update, callbackHandler *handler.CallbackHandler) {
-	go func(chatId int64, messageId int) {
-		emtpyInlineKeyboard := util.NewEditEmptyInlineKeyboard(update.CallbackQuery.Message.Chat.ID, update.CallbackQuery.Message.MessageID)
-		_, err := bot.Request(emtpyInlineKeyboard)
-		if err != nil {
-			log.Error().Msgf("handleCallback error: %w", err)
-		}
-	}(update.CallbackQuery.Message.Chat.ID, update.CallbackQuery.Message.MessageID)
-
 	callbackType, err := getCallbackType(update.CallbackQuery.Data)
 	if err != nil {
-		log.Error().Msg("handleCallback error: unrecognised callback")
+		log.Error().Msg("handleCallback getCallbackType error: unrecognised callback")
 		util.BotSendMessage(bot, update.CallbackQuery.Message.Chat.ID, message.GenericErrReplyMsg)
 	}
 
