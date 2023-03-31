@@ -41,6 +41,14 @@ func NewCallbackHandler(userRepo repo.UserRepo, transactionRepo repo.Transaction
 }
 
 func (handler CallbackHandler) FromCategory(ctx context.Context, bot *tgbotapi.BotAPI, callbackQuery *tgbotapi.CallbackQuery) {
+	go func(chatId int64, messageId int) {
+		emtpyInlineKeyboard := util.NewEditEmptyInlineKeyboard(callbackQuery.Message.Chat.ID, callbackQuery.Message.MessageID)
+		_, err := bot.Request(emtpyInlineKeyboard)
+		if err != nil {
+			log.Error().Msgf("handleCallback emptyInlineKeyboard error: %v", err)
+		}
+	}(callbackQuery.Message.Chat.ID, callbackQuery.Message.MessageID)
+
 	var categoryCallback domain.CategoryCallback
 	err := json.Unmarshal([]byte(callbackQuery.Data), &categoryCallback)
 	if err != nil {
@@ -153,10 +161,19 @@ func (handler CallbackHandler) FromPagination(ctx context.Context, bot *tgbotapi
 	msg := tgbotapi.NewMessage(callbackQuery.Message.Chat.ID, text)
 	msg.ReplyMarkup = tgbotapi.InlineKeyboardMarkup{InlineKeyboard: inlineKeyboard}
 	msg.ParseMode = tgbotapi.ModeHTML
+	util.BotDeleteMessage(bot, callbackQuery.Message.Chat.ID, callbackQuery.Message.MessageID)
 	util.BotSendWrapper(bot, msg)
 }
 
 func (handler CallbackHandler) FromUndo(ctx context.Context, bot *tgbotapi.BotAPI, callbackQuery *tgbotapi.CallbackQuery) {
+	go func(chatId int64, messageId int) {
+		emtpyInlineKeyboard := util.NewEditEmptyInlineKeyboard(callbackQuery.Message.Chat.ID, callbackQuery.Message.MessageID)
+		_, err := bot.Request(emtpyInlineKeyboard)
+		if err != nil {
+			log.Error().Msgf("handleCallback emptyInlineKeyboard error: %v", err)
+		}
+	}(callbackQuery.Message.Chat.ID, callbackQuery.Message.MessageID)
+
 	userId := callbackQuery.From.ID
 	var undoCallback domain.UndoCallback
 
@@ -187,6 +204,13 @@ func (handler CallbackHandler) FromUndo(ctx context.Context, bot *tgbotapi.BotAP
 }
 
 func (handler CallbackHandler) FromCancel(ctx context.Context, bot *tgbotapi.BotAPI, callbackQuery *tgbotapi.CallbackQuery) {
+	go func(chatId int64, messageId int) {
+		emtpyInlineKeyboard := util.NewEditEmptyInlineKeyboard(callbackQuery.Message.Chat.ID, callbackQuery.Message.MessageID)
+		_, err := bot.Request(emtpyInlineKeyboard)
+		if err != nil {
+			log.Error().Msgf("handleCallback emptyInlineKeyboard error: %v", err)
+		}
+	}(callbackQuery.Message.Chat.ID, callbackQuery.Message.MessageID)
 
 	var genericCallback domain.GenericCallback
 	err := json.Unmarshal([]byte(callbackQuery.Data), &genericCallback)

@@ -33,6 +33,8 @@ const (
 
 	listDefaultPageSize   = 10
 	exportDefaultPageSize = 1000
+
+	descLengthLimit = 50
 )
 
 type CommandHandler struct {
@@ -153,7 +155,7 @@ func (handler CommandHandler) StartTransaction(ctx context.Context, bot *tgbotap
 	}
 
 	stringAfter := util.After(update.Message.Text, floatString)
-	if len(strings.TrimSpace(stringAfter)) > 20 {
+	if len(strings.TrimSpace(stringAfter)) > descLengthLimit {
 		util.BotSendMessage(bot, update.Message.Chat.ID, descriptionTooLong)
 		return
 	}
