@@ -157,12 +157,12 @@ func (handler CallbackHandler) FromPagination(ctx context.Context, bot *tgbotapi
 		return
 	}
 
+	delMsg := tgbotapi.NewDeleteMessage(callbackQuery.Message.Chat.ID, callbackQuery.Message.MessageID)
 	text := transactions.GetFormattedHTMLMsg(month, year, user.Location, totalCount, offset, limit)
 	msg := tgbotapi.NewMessage(callbackQuery.Message.Chat.ID, text)
 	msg.ReplyMarkup = tgbotapi.InlineKeyboardMarkup{InlineKeyboard: inlineKeyboard}
 	msg.ParseMode = tgbotapi.ModeHTML
-	util.BotDeleteMessage(bot, callbackQuery.Message.Chat.ID, callbackQuery.Message.MessageID)
-	util.BotSendWrapper(bot, msg)
+	util.BotSendWrapper(bot, delMsg, msg)
 }
 
 func (handler CallbackHandler) FromUndo(ctx context.Context, bot *tgbotapi.BotAPI, callbackQuery *tgbotapi.CallbackQuery) {
