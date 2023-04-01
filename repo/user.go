@@ -2,11 +2,12 @@ package repo
 
 import (
 	"context"
+	"time"
+
 	"github.com/Rhymond/go-money"
 	"github.com/aattwwss/telegram-expense-bot/dao"
 	"github.com/aattwwss/telegram-expense-bot/domain"
 	"github.com/aattwwss/telegram-expense-bot/entity"
-	"time"
 )
 
 type UserRepo struct {
@@ -50,6 +51,20 @@ func (repo UserRepo) Add(ctx context.Context, user domain.User) error {
 		Timezone: user.Location.String(),
 	}
 	err := repo.userDao.Insert(ctx, userEntity)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (repo UserRepo) Update(ctx context.Context, user domain.User) error {
+	userEntity := entity.User{
+		Id:       user.Id,
+		Locale:   user.Locale,
+		Currency: user.Currency.Code,
+		Timezone: user.Location.String(),
+	}
+	err := repo.userDao.Update(ctx, userEntity)
 	if err != nil {
 		return err
 	}
