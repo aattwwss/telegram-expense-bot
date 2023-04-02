@@ -24,6 +24,12 @@ create table transaction_type
     reply_text    varchar(64) default ''::character varying not null
 );
 
+create TABLE context (
+   id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+   name text not null,
+   description text not null default ''
+);
+
 create table app_user
 (
     id       bigint                                                  not null
@@ -95,3 +101,8 @@ values ('Child', 1, 1),
        ('Taxes', 1, 10),
        ('Transport', 1, 11),
        ('Other', 1, 99);
+
+INSERT INTO context (name, description)
+VALUES ('TRANSACTION', 'Listening for new transactions.'),
+       ('SET_TIMEZONE', 'Listening for timezone setting.'),
+       ('SET_CURRENCY', 'Listening for currency setting.');
