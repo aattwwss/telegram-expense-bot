@@ -2,12 +2,14 @@ package repo
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/Rhymond/go-money"
 	"github.com/aattwwss/telegram-expense-bot/dao"
 	"github.com/aattwwss/telegram-expense-bot/domain"
 	"github.com/aattwwss/telegram-expense-bot/entity"
+	"github.com/aattwwss/telegram-expense-bot/enum"
 )
 
 type UserRepo struct {
@@ -33,11 +35,17 @@ func (repo UserRepo) FindUserById(ctx context.Context, id int64) (*domain.User, 
 		return nil, err
 	}
 
+	uc, ok := enum.ParseUserContext(userEntity.CurrentContext)
+	if !ok {
+		return nil, errors.New("Cannot parse user context: " + userEntity.CurrentContext)
+	}
+
 	user := domain.User{
-		Id:       userEntity.Id,
-		Locale:   userEntity.Locale,
-		Currency: money.GetCurrency(userEntity.Currency),
-		Location: loc,
+		Id:             userEntity.Id,
+		Locale:         userEntity.Locale,
+		Currency:       money.GetCurrency(userEntity.Currency),
+		Location:       loc,
+		CurrentContext: uc,
 	}
 
 	return &user, nil
@@ -45,10 +53,11 @@ func (repo UserRepo) FindUserById(ctx context.Context, id int64) (*domain.User, 
 
 func (repo UserRepo) Add(ctx context.Context, user domain.User) error {
 	userEntity := entity.User{
-		Id:       user.Id,
-		Locale:   user.Locale,
-		Currency: user.Currency.Code,
-		Timezone: user.Location.String(),
+		Id:             user.Id,
+		Locale:         user.Locale,
+		Currency:       user.Currency.Code,
+		Timezone:       user.Location.String(),
+		CurrentContext: string(user.CurrentContext),
 	}
 	err := repo.userDao.Insert(ctx, userEntity)
 	if err != nil {

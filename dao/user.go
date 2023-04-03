@@ -19,7 +19,7 @@ func NewUserDao(db *pgxpool.Pool) UserDAO {
 
 func (dao UserDAO) FindUserById(ctx context.Context, id int64) (*entity.User, error) {
 	var users []*entity.User
-	err := pgxscan.Select(ctx, dao.db, &users, `SELECT id, locale, currency, timezone FROM app_user WHERE id = $1`, id)
+	err := pgxscan.Select(ctx, dao.db, &users, `SELECT id, locale, currency, timezone, current_context FROM app_user WHERE id = $1`, id)
 	if err != nil {
 		return nil, err
 	}
@@ -31,10 +31,10 @@ func (dao UserDAO) FindUserById(ctx context.Context, id int64) (*entity.User, er
 
 func (dao UserDAO) Insert(ctx context.Context, user entity.User) error {
 	sql := `
-		INSERT INTO app_user (id, locale, currency, timezone)
-		VALUES ($1, $2, $3, $4)
+		INSERT INTO app_user (id, locale, currency, timezone, current_context)
+		VALUES ($1, $2, $3, $4, $5)
 		`
-	_, err := dao.db.Exec(ctx, sql, user.Id, user.Locale, user.Currency, user.Timezone)
+	_, err := dao.db.Exec(ctx, sql, user.Id, user.Locale, user.Currency, user.Timezone, user.CurrentContext)
 	if err != nil {
 		return err
 	}
@@ -50,10 +50,11 @@ func (dao UserDAO) Update(ctx context.Context, user entity.User) error {
 		UPDATE app_user SET 
 	      locale = $2, 
 	      currency = $3, 
-	      timezone = $4
+	      timezone = $4,
+	      current_context = $5
 	    WHERE id = $1
 		`
-	_, err := dao.db.Exec(ctx, sql, user.Id, user.Locale, user.Currency, user.Timezone)
+	_, err := dao.db.Exec(ctx, sql, user.Id, user.Locale, user.Currency, user.Timezone, user.CurrentContext)
 	if err != nil {
 		return err
 	}
