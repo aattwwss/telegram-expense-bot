@@ -5,10 +5,11 @@ import (
 )
 
 type User struct {
-	Id       int64
-	Locale   string
-	Currency string
-	Timezone string
+	Id             int64
+	Locale         string
+	Currency       string
+	Timezone       string
+	CurrentContext string
 }
 
 type Transaction struct {

@@ -55,7 +55,7 @@ func handleCallback(ctx context.Context, bot *tgbotapi.BotAPI, update tgbotapi.U
 	}
 }
 
-func handleMessage(ctx context.Context, bot *tgbotapi.BotAPI, update tgbotapi.Update, commandHandler *handler.CommandHandler) {
+func handleCommand(ctx context.Context, bot *tgbotapi.BotAPI, update tgbotapi.Update, commandHandler *handler.CommandHandler) {
 	log.Info().Msgf("Received: %v", update.Message.Text)
 
 	if update.Message.IsCommand() {
@@ -75,8 +75,7 @@ func handleMessage(ctx context.Context, bot *tgbotapi.BotAPI, update tgbotapi.Up
 		default:
 			commandHandler.Help(ctx, bot, update)
 		}
-	} else {
-		commandHandler.StartTransaction(ctx, bot, update)
+		return
 	}
 }
 
@@ -167,6 +166,7 @@ func main() {
 	categoryRepo := repo.NewCategoryRepo(categoryDao)
 
 	commandHandler := handler.NewCommandHandler(userRepo, transactionRepo, messageContextRepo, transactionTypeRepo, categoryRepo, statRepo)
+	messageHandler := handler.NewMessageHandler(userRepo, transactionRepo, messageContextRepo, transactionTypeRepo, categoryRepo, statRepo)
 	callbackHandler := handler.NewCallbackHandler(userRepo, transactionRepo, messageContextRepo, transactionTypeRepo, categoryRepo)
 
 	bot, err := tgbotapi.NewBotAPI(cfg.TelegramApiToken)
@@ -185,8 +185,10 @@ func main() {
 
 	processUpdate := func(bot *tgbotapi.BotAPI, update <-chan tgbotapi.Update) {
 		for update := range updates {
-			if update.Message != nil {
-				handleMessage(ctx, bot, update, &commandHandler)
+			if update.Message != nil && update.Message.IsCommand() {
+				handleCommand(ctx, bot, update, &commandHandler)
+			} else if update.Message != nil {
+				messageHandler.Handle(ctx, bot, update)
 			} else if update.CallbackQuery != nil {
 				handleCallback(ctx, bot, update, &callbackHandler)
 			}
