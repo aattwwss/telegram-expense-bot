@@ -41,14 +41,6 @@ func NewCallbackHandler(userRepo repo.UserRepo, transactionRepo repo.Transaction
 }
 
 func (handler CallbackHandler) FromCategory(ctx context.Context, bot *tgbotapi.BotAPI, callbackQuery *tgbotapi.CallbackQuery) {
-	go func(chatId int64, messageId int) {
-		emtpyInlineKeyboard := util.NewEditEmptyInlineKeyboard(callbackQuery.Message.Chat.ID, callbackQuery.Message.MessageID)
-		_, err := bot.Request(emtpyInlineKeyboard)
-		if err != nil {
-			log.Error().Msgf("handleCallback emptyInlineKeyboard error: %v", err)
-		}
-	}(callbackQuery.Message.Chat.ID, callbackQuery.Message.MessageID)
-
 	var categoryCallback domain.CategoryCallback
 	err := json.Unmarshal([]byte(callbackQuery.Data), &categoryCallback)
 	if err != nil {
@@ -121,7 +113,7 @@ func (handler CallbackHandler) FromCategory(ctx context.Context, bot *tgbotapi.B
 }
 
 func (handler CallbackHandler) FromPagination(ctx context.Context, bot *tgbotapi.BotAPI, callbackQuery *tgbotapi.CallbackQuery) {
-	// TODO Find a way to handle the peristing context when paginating
+	// TODO Find a way to handle the persisting context when paginating
 	userId := callbackQuery.From.ID
 	user, err := handler.userRepo.FindUserById(ctx, userId)
 	if err != nil {
@@ -157,23 +149,14 @@ func (handler CallbackHandler) FromPagination(ctx context.Context, bot *tgbotapi
 		return
 	}
 
-	delMsg := tgbotapi.NewDeleteMessage(callbackQuery.Message.Chat.ID, callbackQuery.Message.MessageID)
 	text := transactions.GetFormattedHTMLMsg(month, year, user.Location, totalCount, offset, limit)
 	msg := tgbotapi.NewMessage(callbackQuery.Message.Chat.ID, text)
 	msg.ReplyMarkup = tgbotapi.InlineKeyboardMarkup{InlineKeyboard: inlineKeyboard}
 	msg.ParseMode = tgbotapi.ModeHTML
-	util.BotSendWrapper(bot, delMsg, msg)
+	util.BotSendWrapper(bot, msg)
 }
 
 func (handler CallbackHandler) FromUndo(ctx context.Context, bot *tgbotapi.BotAPI, callbackQuery *tgbotapi.CallbackQuery) {
-	go func(chatId int64, messageId int) {
-		emtpyInlineKeyboard := util.NewEditEmptyInlineKeyboard(callbackQuery.Message.Chat.ID, callbackQuery.Message.MessageID)
-		_, err := bot.Request(emtpyInlineKeyboard)
-		if err != nil {
-			log.Error().Msgf("handleCallback emptyInlineKeyboard error: %v", err)
-		}
-	}(callbackQuery.Message.Chat.ID, callbackQuery.Message.MessageID)
-
 	userId := callbackQuery.From.ID
 	var undoCallback domain.UndoCallback
 
@@ -204,14 +187,6 @@ func (handler CallbackHandler) FromUndo(ctx context.Context, bot *tgbotapi.BotAP
 }
 
 func (handler CallbackHandler) FromCancel(ctx context.Context, bot *tgbotapi.BotAPI, callbackQuery *tgbotapi.CallbackQuery) {
-	go func(chatId int64, messageId int) {
-		emtpyInlineKeyboard := util.NewEditEmptyInlineKeyboard(callbackQuery.Message.Chat.ID, callbackQuery.Message.MessageID)
-		_, err := bot.Request(emtpyInlineKeyboard)
-		if err != nil {
-			log.Error().Msgf("handleCallback emptyInlineKeyboard error: %v", err)
-		}
-	}(callbackQuery.Message.Chat.ID, callbackQuery.Message.MessageID)
-
 	var genericCallback domain.GenericCallback
 	err := json.Unmarshal([]byte(callbackQuery.Data), &genericCallback)
 	if err != nil {
