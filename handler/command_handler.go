@@ -147,7 +147,7 @@ func (handler CommandHandler) StartTransaction(ctx context.Context, bot *tgbotap
 		return
 	}
 
-	floatString, err := util.ParseFloatStringFromString(update.Message.Text)
+	floatString, err := parseFloatStringFromString(update.Message.Text)
 	if err != nil {
 		log.Error().Msgf("%w", err)
 		util.BotSendMessage(bot, update.Message.Chat.ID, cannotRecogniseAmountMsg)
