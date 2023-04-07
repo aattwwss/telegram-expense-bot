@@ -41,18 +41,17 @@ func NewCallbackHandler(userRepo repo.UserRepo, transactionRepo repo.Transaction
 }
 
 func (handler CallbackHandler) FromCategory(ctx context.Context, bot *tgbotapi.BotAPI, callbackQuery *tgbotapi.CallbackQuery) {
-	go func(chatId int64, messageId int) {
-		emtpyInlineKeyboard := util.NewEditEmptyInlineKeyboard(callbackQuery.Message.Chat.ID, callbackQuery.Message.MessageID)
-		_, err := bot.Request(emtpyInlineKeyboard)
-		if err != nil {
-			log.Error().Msgf("handleCallback emptyInlineKeyboard error: %v", err)
-		}
-	}(callbackQuery.Message.Chat.ID, callbackQuery.Message.MessageID)
+	user, err := handler.userRepo.FindUserById(ctx, callbackQuery.From.ID)
+	if err != nil {
+		log.Error().Msgf("Error finding user for category: %v", err)
+		util.BotSendMessage(bot, callbackQuery.Message.Chat.ID, message.GenericErrReplyMsg)
+		return
+	}
 
 	var categoryCallback domain.CategoryCallback
-	err := json.Unmarshal([]byte(callbackQuery.Data), &categoryCallback)
+	err = json.Unmarshal([]byte(callbackQuery.Data), &categoryCallback)
 	if err != nil {
-		log.Error().Msgf("FromCategory unmarshall error: %w", err)
+		log.Error().Msgf("FromCategory unmarshall error: %v", err)
 		util.BotSendMessage(bot, callbackQuery.Message.Chat.ID, message.GenericErrReplyMsg)
 		return
 	}
@@ -61,35 +60,41 @@ func (handler CallbackHandler) FromCategory(ctx context.Context, bot *tgbotapi.B
 
 	category, err := handler.categoryRepo.GetById(ctx, categoryCallback.CategoryId)
 	if err != nil {
-		log.Error().Msgf("Get category by id error: %w", err)
+		log.Error().Msgf("Get category by id error: %v", err)
 		util.BotSendMessage(bot, callbackQuery.Message.Chat.ID, message.GenericErrReplyMsg)
 		return
 	}
 
 	messageContext, err := handler.messageContextRepo.GetMessageById(ctx, categoryCallback.Callback.MessageContextId)
 	if err != nil {
-		log.Error().Msgf("Get message context by id error: %w", err)
+		log.Error().Msgf("Get message context by id error: %v", err)
 		util.BotSendMessage(bot, callbackQuery.Message.Chat.ID, message.GenericErrReplyMsg)
 		return
 	}
 
-	amountString, err := util.ParseFloatStringFromString(messageContext)
+	amountString, err := parseFloatStringFromString(messageContext)
 	if err != nil {
-		log.Error().Msgf("%w", err)
+		log.Error().Msgf("Parsing float string from mesage context error: %v", err)
 		util.BotSendMessage(bot, callbackQuery.Message.Chat.ID, message.GenericErrReplyMsg)
 		return
 	}
 
 	amountFloat, err := strconv.ParseFloat(amountString, 64)
 	if err != nil {
+		log.Error().Msgf("Parsing amountString to amountFloat error: %v", err)
 		util.BotSendMessage(bot, callbackQuery.Message.Chat.ID, message.GenericErrReplyMsg)
 		return
 	}
 
+	amountInt, err := decimalise(amountFloat, *user.Currency)
+	if err != nil {
+		util.BotSendMessage(bot, callbackQuery.Message.Chat.ID, message.GenericErrReplyMsg)
+		return
+	}
 	stringAfter := util.After(messageContext, amountString)
 	description := strings.TrimSpace(stringAfter)
 
-	moneyTransacted := money.NewFromFloat(amountFloat, money.SGD)
+	moneyTransacted := money.New(amountInt, user.Currency.Code)
 
 	transaction := domain.Transaction{
 		Datetime:    time.Now(),
@@ -101,14 +106,14 @@ func (handler CallbackHandler) FromCategory(ctx context.Context, bot *tgbotapi.B
 
 	err = handler.transactionRepo.Add(ctx, transaction)
 	if err != nil {
-		log.Error().Msgf("FromCategory error: %w", err)
+		log.Error().Msgf("FromCategory error: %v", err)
 		util.BotSendMessage(bot, callbackQuery.Message.Chat.ID, message.GenericErrReplyMsg)
 		return
 	}
 
 	transactionType, err := handler.transactionTypeRepo.GetById(ctx, category.TransactionTypeId)
 	if err != nil {
-		log.Error().Msgf("FromCategory error: %w", err)
+		log.Error().Msgf("FromCategory error: %v", err)
 		util.BotSendMessage(bot, callbackQuery.Message.Chat.ID, message.GenericErrReplyMsg)
 		return
 	}
@@ -121,11 +126,11 @@ func (handler CallbackHandler) FromCategory(ctx context.Context, bot *tgbotapi.B
 }
 
 func (handler CallbackHandler) FromPagination(ctx context.Context, bot *tgbotapi.BotAPI, callbackQuery *tgbotapi.CallbackQuery) {
-	// TODO Find a way to handle the peristing context when paginating
+	// TODO Find a way to handle the persisting context when paginating
 	userId := callbackQuery.From.ID
 	user, err := handler.userRepo.FindUserById(ctx, userId)
 	if err != nil {
-		log.Error().Msgf("Error finding user for stats: %w", err)
+		log.Error().Msgf("Error finding user for stats: %v", err)
 		util.BotSendMessage(bot, callbackQuery.Message.Chat.ID, message.GenericErrReplyMsg)
 		return
 	}
@@ -133,14 +138,14 @@ func (handler CallbackHandler) FromPagination(ctx context.Context, bot *tgbotapi
 	var paginationCallback domain.PaginationCallback
 	err = json.Unmarshal([]byte(callbackQuery.Data), &paginationCallback)
 	if err != nil {
-		log.Error().Msgf("FromPagination unmarshall error: %w", err)
+		log.Error().Msgf("FromPagination unmarshall error: %v", err)
 		util.BotSendMessage(bot, callbackQuery.Message.Chat.ID, message.GenericErrReplyMsg)
 		return
 	}
 
 	messageContext, err := handler.messageContextRepo.GetMessageById(ctx, paginationCallback.Callback.MessageContextId)
 	if err != nil {
-		log.Error().Msgf("Get message context by id error: %w", err)
+		log.Error().Msgf("Get message context by id error: %v", err)
 		util.BotSendMessage(bot, callbackQuery.Message.Chat.ID, message.GenericErrReplyMsg)
 		return
 	}
@@ -152,48 +157,39 @@ func (handler CallbackHandler) FromPagination(ctx context.Context, bot *tgbotapi
 
 	inlineKeyboard, err := util.NewPaginationKeyboard(totalCount, offset, limit, paginationCallback.MessageContextId, 2)
 	if err != nil {
-		log.Error().Msgf("Error generating keyboard for transaction pagination: %w", err)
+		log.Error().Msgf("Error generating keyboard for transaction pagination: %v", err)
 		util.BotSendMessage(bot, callbackQuery.Message.Chat.ID, message.GenericErrReplyMsg)
 		return
 	}
 
-	delMsg := tgbotapi.NewDeleteMessage(callbackQuery.Message.Chat.ID, callbackQuery.Message.MessageID)
 	text := transactions.GetFormattedHTMLMsg(month, year, user.Location, totalCount, offset, limit)
 	msg := tgbotapi.NewMessage(callbackQuery.Message.Chat.ID, text)
 	msg.ReplyMarkup = tgbotapi.InlineKeyboardMarkup{InlineKeyboard: inlineKeyboard}
 	msg.ParseMode = tgbotapi.ModeHTML
-	util.BotSendWrapper(bot, delMsg, msg)
+	util.BotSendWrapper(bot, msg)
 }
 
 func (handler CallbackHandler) FromUndo(ctx context.Context, bot *tgbotapi.BotAPI, callbackQuery *tgbotapi.CallbackQuery) {
-	go func(chatId int64, messageId int) {
-		emtpyInlineKeyboard := util.NewEditEmptyInlineKeyboard(callbackQuery.Message.Chat.ID, callbackQuery.Message.MessageID)
-		_, err := bot.Request(emtpyInlineKeyboard)
-		if err != nil {
-			log.Error().Msgf("handleCallback emptyInlineKeyboard error: %v", err)
-		}
-	}(callbackQuery.Message.Chat.ID, callbackQuery.Message.MessageID)
-
 	userId := callbackQuery.From.ID
 	var undoCallback domain.UndoCallback
 
 	err := json.Unmarshal([]byte(callbackQuery.Data), &undoCallback)
 	if err != nil {
-		log.Error().Msgf("FromUndo unmarshall error: %w", err)
+		log.Error().Msgf("FromUndo unmarshall error: %v", err)
 		return
 	}
 	log.Info().Msgf("transaction: %v", undoCallback.TransactionId)
 
 	transaction, err := handler.transactionRepo.GetById(ctx, undoCallback.TransactionId, userId)
 	if err != nil {
-		log.Error().Msgf("FromUndo cannot find transaction error: %w", err)
+		log.Error().Msgf("FromUndo cannot find transaction error: %v", err)
 		util.BotSendMessage(bot, callbackQuery.Message.Chat.ID, message.GenericErrReplyMsg)
 		return
 	}
 
 	err = handler.transactionRepo.DeleteById(ctx, undoCallback.TransactionId, userId)
 	if err != nil {
-		log.Error().Msgf("Error deleting latest transaction: %w", err)
+		log.Error().Msgf("Error deleting latest transaction: %v", err)
 		util.BotSendMessage(bot, callbackQuery.Message.Chat.ID, message.GenericErrReplyMsg)
 		return
 	}
@@ -204,18 +200,10 @@ func (handler CallbackHandler) FromUndo(ctx context.Context, bot *tgbotapi.BotAP
 }
 
 func (handler CallbackHandler) FromCancel(ctx context.Context, bot *tgbotapi.BotAPI, callbackQuery *tgbotapi.CallbackQuery) {
-	go func(chatId int64, messageId int) {
-		emtpyInlineKeyboard := util.NewEditEmptyInlineKeyboard(callbackQuery.Message.Chat.ID, callbackQuery.Message.MessageID)
-		_, err := bot.Request(emtpyInlineKeyboard)
-		if err != nil {
-			log.Error().Msgf("handleCallback emptyInlineKeyboard error: %v", err)
-		}
-	}(callbackQuery.Message.Chat.ID, callbackQuery.Message.MessageID)
-
 	var genericCallback domain.GenericCallback
 	err := json.Unmarshal([]byte(callbackQuery.Data), &genericCallback)
 	if err != nil {
-		log.Error().Msgf("FromCancel unmarshall error: %w", err)
+		log.Error().Msgf("FromCancel unmarshall error: %v", err)
 		return
 	}
 
@@ -249,6 +237,29 @@ func newCategoriesKeyboard(categories []domain.Category, messageContextId int, c
 func (handler CallbackHandler) deleteMessageContext(ctx context.Context, id int) {
 	err := handler.messageContextRepo.DeleteById(ctx, id)
 	if err != nil {
-		log.Error().Msgf("deleteMessageContext error: %w", err)
+		log.Error().Msgf("deleteMessageContext error: %v", err)
 	}
+}
+
+// decimalise decimalise the value of a currency to its lowest denomination
+func decimalise(value float64, currency money.Currency) (int64, error) {
+	formatString := fmt.Sprintf("%%.%df", currency.Fraction)
+	formatted := fmt.Sprintf(formatString, value)
+	intString := removeNonNumeric(formatted)
+	res, err := strconv.ParseInt(intString, 10, 64)
+	if err != nil {
+		return 0, err
+	}
+	return res, err
+}
+
+// removeNonNumeric removes all non-numeric characters from a string
+func removeNonNumeric(s string) string {
+	var sb strings.Builder
+	for _, ch := range s {
+		if ch >= '0' && ch <= '9' {
+			sb.WriteRune(ch)
+		}
+	}
+	return sb.String()
 }

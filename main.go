@@ -32,6 +32,8 @@ func getCallbackType(callbackData string) (enum.CallbackType, error) {
 }
 
 func handleCallback(ctx context.Context, bot *tgbotapi.BotAPI, update tgbotapi.Update, callbackHandler *handler.CallbackHandler) {
+	go util.BotDeleteMessage(bot, update.CallbackQuery.Message.Chat.ID, update.CallbackQuery.Message.MessageID)
+
 	callbackType, err := getCallbackType(update.CallbackQuery.Data)
 	if err != nil {
 		log.Error().Msg("handleCallback getCallbackType error: unrecognised callback")
