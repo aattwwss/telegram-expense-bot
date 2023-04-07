@@ -74,13 +74,14 @@ func (handler CallbackHandler) FromCategory(ctx context.Context, bot *tgbotapi.B
 
 	amountString, err := parseFloatStringFromString(messageContext)
 	if err != nil {
-		log.Error().Msgf("Parsing float string from meesage context error: %v", err)
+		log.Error().Msgf("Parsing float string from mesage context error: %v", err)
 		util.BotSendMessage(bot, callbackQuery.Message.Chat.ID, message.GenericErrReplyMsg)
 		return
 	}
 
 	amountFloat, err := strconv.ParseFloat(amountString, 64)
 	if err != nil {
+		log.Error().Msgf("Parsing amountString to amountFloat error: %v", err)
 		util.BotSendMessage(bot, callbackQuery.Message.Chat.ID, message.GenericErrReplyMsg)
 		return
 	}
@@ -129,7 +130,7 @@ func (handler CallbackHandler) FromPagination(ctx context.Context, bot *tgbotapi
 	userId := callbackQuery.From.ID
 	user, err := handler.userRepo.FindUserById(ctx, userId)
 	if err != nil {
-		log.Error().Msgf("Error finding user for stats: %w", err)
+		log.Error().Msgf("Error finding user for stats: %v", err)
 		util.BotSendMessage(bot, callbackQuery.Message.Chat.ID, message.GenericErrReplyMsg)
 		return
 	}
@@ -137,14 +138,14 @@ func (handler CallbackHandler) FromPagination(ctx context.Context, bot *tgbotapi
 	var paginationCallback domain.PaginationCallback
 	err = json.Unmarshal([]byte(callbackQuery.Data), &paginationCallback)
 	if err != nil {
-		log.Error().Msgf("FromPagination unmarshall error: %w", err)
+		log.Error().Msgf("FromPagination unmarshall error: %v", err)
 		util.BotSendMessage(bot, callbackQuery.Message.Chat.ID, message.GenericErrReplyMsg)
 		return
 	}
 
 	messageContext, err := handler.messageContextRepo.GetMessageById(ctx, paginationCallback.Callback.MessageContextId)
 	if err != nil {
-		log.Error().Msgf("Get message context by id error: %w", err)
+		log.Error().Msgf("Get message context by id error: %v", err)
 		util.BotSendMessage(bot, callbackQuery.Message.Chat.ID, message.GenericErrReplyMsg)
 		return
 	}
@@ -156,7 +157,7 @@ func (handler CallbackHandler) FromPagination(ctx context.Context, bot *tgbotapi
 
 	inlineKeyboard, err := util.NewPaginationKeyboard(totalCount, offset, limit, paginationCallback.MessageContextId, 2)
 	if err != nil {
-		log.Error().Msgf("Error generating keyboard for transaction pagination: %w", err)
+		log.Error().Msgf("Error generating keyboard for transaction pagination: %v", err)
 		util.BotSendMessage(bot, callbackQuery.Message.Chat.ID, message.GenericErrReplyMsg)
 		return
 	}
@@ -174,21 +175,21 @@ func (handler CallbackHandler) FromUndo(ctx context.Context, bot *tgbotapi.BotAP
 
 	err := json.Unmarshal([]byte(callbackQuery.Data), &undoCallback)
 	if err != nil {
-		log.Error().Msgf("FromUndo unmarshall error: %w", err)
+		log.Error().Msgf("FromUndo unmarshall error: %v", err)
 		return
 	}
 	log.Info().Msgf("transaction: %v", undoCallback.TransactionId)
 
 	transaction, err := handler.transactionRepo.GetById(ctx, undoCallback.TransactionId, userId)
 	if err != nil {
-		log.Error().Msgf("FromUndo cannot find transaction error: %w", err)
+		log.Error().Msgf("FromUndo cannot find transaction error: %v", err)
 		util.BotSendMessage(bot, callbackQuery.Message.Chat.ID, message.GenericErrReplyMsg)
 		return
 	}
 
 	err = handler.transactionRepo.DeleteById(ctx, undoCallback.TransactionId, userId)
 	if err != nil {
-		log.Error().Msgf("Error deleting latest transaction: %w", err)
+		log.Error().Msgf("Error deleting latest transaction: %v", err)
 		util.BotSendMessage(bot, callbackQuery.Message.Chat.ID, message.GenericErrReplyMsg)
 		return
 	}
@@ -202,7 +203,7 @@ func (handler CallbackHandler) FromCancel(ctx context.Context, bot *tgbotapi.Bot
 	var genericCallback domain.GenericCallback
 	err := json.Unmarshal([]byte(callbackQuery.Data), &genericCallback)
 	if err != nil {
-		log.Error().Msgf("FromCancel unmarshall error: %w", err)
+		log.Error().Msgf("FromCancel unmarshall error: %v", err)
 		return
 	}
 
@@ -236,7 +237,7 @@ func newCategoriesKeyboard(categories []domain.Category, messageContextId int, c
 func (handler CallbackHandler) deleteMessageContext(ctx context.Context, id int) {
 	err := handler.messageContextRepo.DeleteById(ctx, id)
 	if err != nil {
-		log.Error().Msgf("deleteMessageContext error: %w", err)
+		log.Error().Msgf("deleteMessageContext error: %v", err)
 	}
 }
 
