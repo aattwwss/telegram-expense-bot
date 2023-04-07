@@ -3,7 +3,9 @@ package handler
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -41,10 +43,17 @@ func NewCallbackHandler(userRepo repo.UserRepo, transactionRepo repo.Transaction
 }
 
 func (handler CallbackHandler) FromCategory(ctx context.Context, bot *tgbotapi.BotAPI, callbackQuery *tgbotapi.CallbackQuery) {
-	var categoryCallback domain.CategoryCallback
-	err := json.Unmarshal([]byte(callbackQuery.Data), &categoryCallback)
+	user, err := handler.userRepo.FindUserById(ctx, callbackQuery.From.ID)
 	if err != nil {
-		log.Error().Msgf("FromCategory unmarshall error: %w", err)
+		log.Error().Msgf("Error finding user for category: %v", err)
+		util.BotSendMessage(bot, callbackQuery.Message.Chat.ID, message.GenericErrReplyMsg)
+		return
+	}
+
+	var categoryCallback domain.CategoryCallback
+	err = json.Unmarshal([]byte(callbackQuery.Data), &categoryCallback)
+	if err != nil {
+		log.Error().Msgf("FromCategory unmarshall error: %v", err)
 		util.BotSendMessage(bot, callbackQuery.Message.Chat.ID, message.GenericErrReplyMsg)
 		return
 	}
@@ -53,21 +62,21 @@ func (handler CallbackHandler) FromCategory(ctx context.Context, bot *tgbotapi.B
 
 	category, err := handler.categoryRepo.GetById(ctx, categoryCallback.CategoryId)
 	if err != nil {
-		log.Error().Msgf("Get category by id error: %w", err)
+		log.Error().Msgf("Get category by id error: %v", err)
 		util.BotSendMessage(bot, callbackQuery.Message.Chat.ID, message.GenericErrReplyMsg)
 		return
 	}
 
 	messageContext, err := handler.messageContextRepo.GetMessageById(ctx, categoryCallback.Callback.MessageContextId)
 	if err != nil {
-		log.Error().Msgf("Get message context by id error: %w", err)
+		log.Error().Msgf("Get message context by id error: %v", err)
 		util.BotSendMessage(bot, callbackQuery.Message.Chat.ID, message.GenericErrReplyMsg)
 		return
 	}
 
-	amountString, err := util.ParseFloatStringFromString(messageContext)
+	amountString, err := parseFloatStringFromString(messageContext)
 	if err != nil {
-		log.Error().Msgf("%w", err)
+		log.Error().Msgf("Parsing float string from meesage context error: %v", err)
 		util.BotSendMessage(bot, callbackQuery.Message.Chat.ID, message.GenericErrReplyMsg)
 		return
 	}
@@ -78,10 +87,15 @@ func (handler CallbackHandler) FromCategory(ctx context.Context, bot *tgbotapi.B
 		return
 	}
 
+	amountInt, err := decimalise(amountFloat, *user.Currency)
+	if err != nil {
+		util.BotSendMessage(bot, callbackQuery.Message.Chat.ID, message.GenericErrReplyMsg)
+		return
+	}
 	stringAfter := util.After(messageContext, amountString)
 	description := strings.TrimSpace(stringAfter)
 
-	moneyTransacted := money.NewFromFloat(amountFloat, money.SGD)
+	moneyTransacted := money.New(amountInt, user.Currency.Code)
 
 	transaction := domain.Transaction{
 		Datetime:    time.Now(),
@@ -93,14 +107,14 @@ func (handler CallbackHandler) FromCategory(ctx context.Context, bot *tgbotapi.B
 
 	err = handler.transactionRepo.Add(ctx, transaction)
 	if err != nil {
-		log.Error().Msgf("FromCategory error: %w", err)
+		log.Error().Msgf("FromCategory error: %v", err)
 		util.BotSendMessage(bot, callbackQuery.Message.Chat.ID, message.GenericErrReplyMsg)
 		return
 	}
 
 	transactionType, err := handler.transactionTypeRepo.GetById(ctx, category.TransactionTypeId)
 	if err != nil {
-		log.Error().Msgf("FromCategory error: %w", err)
+		log.Error().Msgf("FromCategory error: %v", err)
 		util.BotSendMessage(bot, callbackQuery.Message.Chat.ID, message.GenericErrReplyMsg)
 		return
 	}
@@ -221,9 +235,41 @@ func newCategoriesKeyboard(categories []domain.Category, messageContextId int, c
 
 }
 
+var floatParser = regexp.MustCompile(`-?\d[\d,]*[.]?[\d{2}]*`)
+
+func parseFloatStringFromString(s string) (string, error) {
+	matches := floatParser.FindAllString(s, -1)
+	if len(matches) == 0 {
+		return "", errors.New("no float found in string: " + s)
+	}
+	return matches[0], nil
+}
 func (handler CallbackHandler) deleteMessageContext(ctx context.Context, id int) {
 	err := handler.messageContextRepo.DeleteById(ctx, id)
 	if err != nil {
 		log.Error().Msgf("deleteMessageContext error: %w", err)
 	}
+}
+
+// decimalise decimalise the value of a currency to its lowest denomination
+func decimalise(value float64, currency money.Currency) (int64, error) {
+	formatString := fmt.Sprintf("%%.%df", currency.Fraction)
+	formatted := fmt.Sprintf(formatString, value)
+	intString := removeNonNumeric(formatted)
+	res, err := strconv.ParseInt(intString, 10, 64)
+	if err != nil {
+		return 0, err
+	}
+	return res, err
+}
+
+// removeNonNumeric removes all non-numeric characters from a string
+func removeNonNumeric(s string) string {
+	var sb strings.Builder
+	for _, ch := range s {
+		if ch >= '0' && ch <= '9' {
+			sb.WriteRune(ch)
+		}
+	}
+	return sb.String()
 }
