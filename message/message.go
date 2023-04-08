@@ -38,4 +38,6 @@ If you have any questions or problems, email me at telegram.expense.bot@gmail.co
 	InvalidTimeZoneMsg = "Sorry, I don't recognise this timezone.\nIf you are not sure of your timezone, you can find it out here https://webbrowsertools.com/timezone/"
 	GenericErrReplyMsg = "Something went wrong :("
 	WorkInProgressMsg  = "Sorry this function is still a work in progress."
+
+	SetTimeZoneSuccessMsg = "Your timezone is updated to %s."
 )

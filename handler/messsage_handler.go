@@ -2,8 +2,13 @@ package handler
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 	"strings"
+	"time"
 
+	"github.com/aattwwss/telegram-expense-bot/domain"
+	"github.com/aattwwss/telegram-expense-bot/enum"
 	"github.com/aattwwss/telegram-expense-bot/message"
 	"github.com/aattwwss/telegram-expense-bot/repo"
 	"github.com/aattwwss/telegram-expense-bot/util"
@@ -46,20 +51,20 @@ func (mh MessageHandler) Handle(ctx context.Context, bot *tgbotapi.BotAPI, updat
 		return
 	}
 
-	// switch dbUser.CurrentContext {
-	// case enum.Transaction:
-	// 	mh.startTransaction(ctx, bot, update)
-	// case enum.SetTimeZone:
-	// 	mh.setTimeZone(ctx, bot, update)
-	// case enum.SetCurrency:
-	// 	mh.setCurrency(ctx, bot, update)
-	// default:
-	// 	mh.startTransaction(ctx, bot, update)
-	// }
+	switch dbUser.CurrentContext {
+	case enum.Transaction:
+		mh.startTransaction(ctx, bot, update)
+	case enum.SetTimeZone:
+		mh.setTimeZone(ctx, bot, update, *dbUser)
+	case enum.SetCurrency:
+		mh.setCurrency(ctx, bot, update)
+	default:
+		mh.startTransaction(ctx, bot, update)
+	}
 }
 
 func (mh MessageHandler) startTransaction(ctx context.Context, bot *tgbotapi.BotAPI, update tgbotapi.Update) {
-	floatString, err := util.ParseFloatStringFromString(update.Message.Text)
+	floatString, err := parseFloatStringFromString(update.Message.Text)
 	if err != nil {
 		log.Error().Msgf("%v", err)
 		util.BotSendMessage(bot, update.Message.Chat.ID, cannotRecogniseAmountMsg)
@@ -98,8 +103,59 @@ func (mh MessageHandler) startTransaction(ctx context.Context, bot *tgbotapi.Bot
 	util.BotSendWrapper(bot, msg)
 }
 
-func (mh MessageHandler) setTimeZone(ctx context.Context, bot *tgbotapi.BotAPI, update tgbotapi.Update) {
-	// tzString := update.Message.Text
+func (mh MessageHandler) setTimeZone(ctx context.Context, bot *tgbotapi.BotAPI, update tgbotapi.Update, user domain.User) {
+	var tzCallback domain.TimeZoneCallback
+
+	err := json.Unmarshal([]byte(update.CallbackQuery.Data), &tzCallback)
+	if err != nil {
+		log.Error().Msgf("setTimeZone unmarshall error: %v", err)
+		return
+	}
+	log.Info().Msgf("timezone offset: %v", tzCallback.TzOffset)
+
+	newLoc, err := time.LoadLocation(fmt.Sprintf("Etc/GMT%+d", -1*tzCallback.TzOffset))
+	if err != nil {
+		log.Error().Msgf("loadLocation error: %v", err)
+		util.BotSendMessage(bot, update.Message.Chat.ID, message.InvalidTimeZoneMsg)
+		return
+	}
+
+	user.Location = newLoc
+	mh.userRepo.Update(ctx, user)
+
+	util.BotSendMessage(bot, update.Message.Chat.ID, fmt.Sprintf(message.SetTimeZoneSuccessMsg, offsetToGMT(tzCallback.TzOffset)))
 }
+
 func (mh MessageHandler) setCurrency(ctx context.Context, bot *tgbotapi.BotAPI, update tgbotapi.Update) {
+}
+
+func newTimeZoneKeyboard(messageContextId int, colSize int) ([][]tgbotapi.InlineKeyboardButton, error) {
+	tzOffsetStart := -12
+	tzOffsetEnd := 13
+
+	var configs []util.InlineKeyboardConfig
+	for offset := tzOffsetStart; offset <= tzOffsetEnd; offset++ {
+		data := domain.TimeZoneCallback{
+			Callback: domain.Callback{
+				Type:             enum.Category,
+				MessageContextId: messageContextId,
+			},
+			TzOffset: offset,
+		}
+
+		dataJson, err := util.ToJson(data)
+		if err != nil {
+			return nil, err
+		}
+
+		config := util.NewInlineKeyboardConfig(offsetToGMT(offset), dataJson)
+		configs = append(configs, config)
+	}
+
+	return util.NewInlineKeyboard(configs, messageContextId, colSize, true), nil
+
+}
+
+func offsetToGMT(offset int) string {
+	return fmt.Sprintf("GMT%+d", offset)
 }

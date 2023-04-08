@@ -32,3 +32,8 @@ type UndoCallback struct {
 	Callback      `json:"c"`
 	TransactionId int `json:"t"`
 }
+
+type TimeZoneCallback struct {
+	Callback `json:"c"`
+	TzOffset int `json:"t"`
+}

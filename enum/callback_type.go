@@ -11,6 +11,7 @@ const (
 	Category        CallbackType = "Category"
 	Pagination      CallbackType = "Pagination"
 	Undo            CallbackType = "Undo"
+	TimeZone        CallbackType = "TimeZone"
 	Cancel          CallbackType = "Cancel"
 
 	Next     PaginateAction = "Next"
