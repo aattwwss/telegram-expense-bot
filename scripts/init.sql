@@ -71,8 +71,8 @@ comment on column transaction.amount is 'Normalised to the lowest denominator';
 create table message_context
 (
     id            serial primary key,
-    chat_id       int not null,
-    message_id    int not null,
+    chat_id       bigint not null,
+    message_id    bigint not null,
     message       text not null,
     created_at    timestamp with time zone not null
 );
