@@ -22,7 +22,7 @@ const (
 	userExistsMsg            = "Welcome back! These are the summary of your transactions: \n"
 	errorFindingUserMsg      = "Sorry there is a problem fetching your information.\n"
 	errorCreatingUserMsg     = "Sorry there is a problem signing you up.\n"
-	signUpSuccessMsg         = "Welcome to your expense tracker!\nCongratulations! We can get you started right away!\n"
+	signUpSuccessMsg         = "Congratulations!\nWelcome to your expense tracker!\nType /help to learn how you can start using this bot right away!"
 	cannotRecogniseAmountMsg = "I don't recognise that amount of money :(\n"
 	descriptionTooLong       = "Sorry, your description (max 20 characters) is too long :( \n"
 	transactionListEmptyMsg  = "You have no transactions this month."
