@@ -3,7 +3,7 @@ package message
 const (
 	HelpMsg = `
 Message directly to start recording an expenses.
-E.g. "5.50 Chicken Rice" to record an expense of $5.50 with the description "Chicken Rice".
+E.g. "5.50 Chicken Rice" (without the quotes) to record an expense of $5.50 with the description "Chicken Rice".
 	
 Type /stats [month] [year] to view the breakdown for the month.
 Type /list [month] [year] to view the expenses for the month.
