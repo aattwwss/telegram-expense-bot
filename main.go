@@ -112,6 +112,7 @@ func runWebhook(bot *tgbotapi.BotAPI, cfg config.EnvConfig) tgbotapi.UpdatesChan
 		log.Fatal().Err(err)
 	}
 
+	updates := bot.ListenForWebhook("/" + bot.Token)
 	_, err = bot.Request(webhook)
 	if err != nil {
 		log.Fatal().Err(err)
@@ -126,7 +127,7 @@ func runWebhook(bot *tgbotapi.BotAPI, cfg config.EnvConfig) tgbotapi.UpdatesChan
 		log.Info().Msgf("Telegram callback failed: %s", info.LastErrorMessage)
 	}
 
-	return bot.ListenForWebhook("/" + bot.Token)
+	return updates
 }
 
 func runPolling(bot *tgbotapi.BotAPI) tgbotapi.UpdatesChannel {
