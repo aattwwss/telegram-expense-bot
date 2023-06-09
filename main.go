@@ -1,8 +1,11 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
+	"github.com/rs/zerolog"
 	"net/http"
 	"os"
 	"time"
@@ -139,6 +142,32 @@ func runPolling(bot *tgbotapi.BotAPI) tgbotapi.UpdatesChannel {
 	return bot.GetUpdatesChan(u)
 }
 
+type telegramHook struct {
+	token           string
+	chatId          string
+	applicationName string
+}
+
+func (h telegramHook) Run(e *zerolog.Event, level zerolog.Level, msg string) {
+	if level == zerolog.ErrorLevel || level == zerolog.FatalLevel || level == zerolog.PanicLevel {
+		apiURL := fmt.Sprintf("https://api.telegram.org/bot%s/sendMessage", h.token)
+
+		logMsg := fmt.Sprintf("<b>%s</b><code>\n\nlevel: %s\ntime : %s\nmsg  : %s</code>", h.applicationName, level, time.Now().Format("2006-01-02 15:04:05.000"), msg)
+		requestBody := fmt.Sprintf(`{"chat_id": "%s", "text": "%s", "parse_mode": "HTML"}`, h.chatId, logMsg)
+		resp, _ := http.Post(apiURL, "application/json", bytes.NewBuffer([]byte(requestBody)))
+		defer resp.Body.Close()
+	}
+}
+
+func newTelegramHook(token, chatId string) zerolog.Hook {
+	telegramHook := telegramHook{
+		token:           token,
+		chatId:          chatId,
+		applicationName: "expense-tracker-bot",
+	}
+	return telegramHook
+}
+
 func main() {
 	ctx := context.Background()
 
@@ -150,8 +179,12 @@ func main() {
 	if err := env.Parse(&cfg); err != nil {
 		log.Fatal().Err(err)
 	}
-	dbLoaded, _ := db.LoadDB(ctx, cfg)
+	if cfg.LogTelegramToken != "" || cfg.LogTelegramChatId != "" {
+		telegramHook := newTelegramHook(cfg.LogTelegramToken, cfg.LogTelegramChatId)
+		log.Logger = log.Hook(telegramHook)
+	}
 
+	dbLoaded, _ := db.LoadDB(ctx, cfg)
 	userDAO := dao.NewUserDao(dbLoaded)
 	transactionDao := dao.NewTransactionDao(dbLoaded)
 	messageContextDao := dao.NewMessageContextDao(dbLoaded)

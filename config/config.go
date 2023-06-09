@@ -17,4 +17,7 @@ type EnvConfig struct {
 
 	WebhookHost    string `env:"WEBHOOK_HOST"`
 	WebhookEnabled bool   `env:"WEBHOOK_ENABLED"`
+
+	LogTelegramToken  string `env:"LOG_TELEGRAM_TOKEN"`
+	LogTelegramChatId string `env:"LOG_TELEGRAM_CHAT_ID"`
 }
