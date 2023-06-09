@@ -103,7 +103,7 @@ func loadEnv() error {
 func runWebhook(bot *tgbotapi.BotAPI, cfg config.EnvConfig) tgbotapi.UpdatesChannel {
 	log.Info().Msg("Running on webhook!")
 	http.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) { w.Write([]byte("OK")) })
-	http.HandleFunc("/"+cfg.TelegramApiToken, func(w http.ResponseWriter, r *http.Request) { w.Write([]byte("OK")) })
+	//http.HandleFunc("/"+cfg.TelegramApiToken, func(w http.ResponseWriter, r *http.Request) { w.Write([]byte("OK")) })
 
 	go http.ListenAndServe(cfg.AppHost+":"+cfg.AppPort, nil)
 	time.Sleep(200 * time.Millisecond)
