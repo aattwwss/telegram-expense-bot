@@ -123,7 +123,7 @@ func runWebhook(bot *tgbotapi.BotAPI, cfg config.EnvConfig) tgbotapi.UpdatesChan
 	}
 	lastErrorTime := time.UnixMilli(int64(info.LastErrorDate * 1000))
 	if info.LastErrorDate != 0 {
-		log.Info().Msgf("Last error date: %s Telegram callback failed: %s", lastErrorTime.Format("2006-01-02 15:04:05.000"), info.LastErrorMessage)
+		log.Info().Msgf("Last error date: %s Telegram callback failed: %s", lastErrorTime.Format(time.RFC3339), info.LastErrorMessage)
 	}
 
 	return bot.ListenForWebhook("/" + bot.Token)
