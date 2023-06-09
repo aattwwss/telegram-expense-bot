@@ -122,9 +122,6 @@ func runWebhook(bot *tgbotapi.BotAPI, cfg config.EnvConfig) tgbotapi.UpdatesChan
 		log.Fatal().Err(err)
 	}
 
-	s, _ := json.Marshal(info)
-	log.Info().Msgf("Telegram callback info: %s", s)
-
 	if info.LastErrorDate != 0 {
 		log.Info().Msgf("Telegram callback failed: %s", info.LastErrorMessage)
 	}
