@@ -6,7 +6,7 @@ Message directly with the format "[amount] [description]" to start recording an 
 Make sure the amount is purely a number or deciaml with no currency code or symbol.
 The desciption can be made up of any characters.
 
-E.g
+Example:
 ✔️ "5.50 Chicken Rice" (without the quotes) to record an expense of $5.50 with the description "Chicken Rice".
 ✔️ "100 Ikea Table" (without the quotes) to record an expense of $100 with the description "Ikea Table".
 ❌ "Computer 2400" (without the quotes) will give an error".
