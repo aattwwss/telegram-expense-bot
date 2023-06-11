@@ -278,6 +278,10 @@ func (handler CommandHandler) Export(ctx context.Context, bot *tgbotapi.BotAPI, 
 	offset := 0
 	for {
 		transactions, totalCount, err := handler.transactionRepo.ListByMonthAndYear(ctx, month, year, offset, pageSize, true, *user)
+		if totalCount == 0 {
+			util.BotSendMessage(bot, update.Message.Chat.ID, transactionListEmptyMsg)
+			return
+		}
 		if offset > totalCount {
 			break
 		}
