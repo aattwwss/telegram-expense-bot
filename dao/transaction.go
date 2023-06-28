@@ -84,12 +84,13 @@ func (dao TransactionDAO) GetBreakdownByCategory(ctx context.Context, dateFrom t
 	var entities []entity.TransactionBreakdown
 	sql := `
 			SELECT c.name as     category_name,
+			       c.id   as     category_id,
 			       sum(t.amount) amount
 			FROM transaction t JOIN category c on t.category_id = c.id
 			WHERE datetime >= $1::timestamptz
 			AND datetime < $2::timestamptz
 			AND user_id = $3
-			GROUP BY c.name
+			GROUP BY c.id
 			ORDER BY amount DESC;
 		`
 	err := pgxscan.Select(ctx, dao.db, &entities, sql, dateFrom.Format(time.RFC3339), dateTo.Format(time.RFC3339), userId)

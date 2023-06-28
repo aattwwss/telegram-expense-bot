@@ -116,6 +116,7 @@ func (repo TransactionRepo) GetTransactionBreakdownByCategory(ctx context.Contex
 	for _, e := range entities {
 		percent := float64(e.Amount) / float64(totalAmount) * 100
 		breakdown := domain.Breakdown{
+			CategoryId:   e.CategoryId,
 			CategoryName: e.CategoryName,
 			Amount:       money.New(e.Amount, user.Currency.Code),
 			Percent:      math.Round(percent*10) / 10,

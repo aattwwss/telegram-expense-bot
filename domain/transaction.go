@@ -49,6 +49,7 @@ func (trxs Transactions) GetFormattedHTMLMsg(searchedMonth time.Month, searchedY
 }
 
 type Breakdown struct {
+	CategoryId   int
 	CategoryName string
 	Amount       *money.Money
 	Percent      float64
