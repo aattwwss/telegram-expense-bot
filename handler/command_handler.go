@@ -279,9 +279,9 @@ func (handler CommandHandler) Export(ctx context.Context, bot *tgbotapi.BotAPI, 
 	excel.SetSheetRow("Sheet1", "A1", &[]string{
 		"Date",
 		"Description",
-		"Currency",
 		"Amount",
 		"Category",
+		"Currency",
 	})
 
 	offset := 0
@@ -303,9 +303,9 @@ func (handler CommandHandler) Export(ctx context.Context, bot *tgbotapi.BotAPI, 
 			data := []interface{}{
 				t.Datetime.In(user.Location),
 				t.Description,
-				t.Amount.Currency().Code,
 				t.Amount.AsMajorUnits(),
 				t.CategoryName,
+				t.Amount.Currency().Code,
 			}
 
 			dataRow := i + 2
