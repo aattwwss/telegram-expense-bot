@@ -2,7 +2,6 @@ package handler
 
 import (
 	"context"
-	"encoding/csv"
 	"fmt"
 	"os"
 	"strings"
@@ -16,6 +15,7 @@ import (
 	"github.com/aattwwss/telegram-expense-bot/util"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/rs/zerolog/log"
+	"github.com/xuri/excelize/v2"
 )
 
 const (
@@ -63,7 +63,7 @@ func (handler CommandHandler) Start(ctx context.Context, bot *tgbotapi.BotAPI, u
 
 	dbUser, err := handler.userRepo.FindUserById(ctx, teleUser.ID)
 	if err != nil {
-		log.Error().Msgf("error finding user: %w", err)
+		log.Error().Msgf("error finding user: %v", err)
 		util.BotSendMessage(bot, update.Message.Chat.ID, errorFindingUserMsg)
 		return
 	}
@@ -86,7 +86,7 @@ func (handler CommandHandler) Start(ctx context.Context, bot *tgbotapi.BotAPI, u
 
 	err = handler.userRepo.Add(ctx, user)
 	if err != nil {
-		log.Error().Msgf("error adding user: %w", err)
+		log.Error().Msgf("error adding user: %v", err)
 		util.BotSendMessage(bot, update.Message.Chat.ID, errorCreatingUserMsg)
 		return
 	}
@@ -104,7 +104,7 @@ func (handler CommandHandler) Undo(ctx context.Context, bot *tgbotapi.BotAPI, up
 	userId := update.Message.From.ID
 	latestTransaction, err := handler.transactionRepo.FindLastestByUserId(ctx, userId)
 	if err != nil {
-		log.Error().Msgf("Error finding latest transaction: %w", err)
+		log.Error().Msgf("Error finding latest transaction: %v", err)
 		util.BotSendMessage(bot, update.Message.Chat.ID, message.GenericErrReplyMsg)
 		return
 	}
@@ -115,14 +115,14 @@ func (handler CommandHandler) Undo(ctx context.Context, bot *tgbotapi.BotAPI, up
 
 	contextId, err := handler.messageContextRepo.Add(ctx, update.Message.Chat.ID, update.Message.MessageID, update.Message.Text)
 	if err != nil {
-		log.Error().Msgf("Add message context error: %w", err)
+		log.Error().Msgf("Add message context error: %v", err)
 		util.BotSendMessage(bot, update.Message.Chat.ID, message.GenericErrReplyMsg)
 		return
 	}
 
 	inlineKeyboard, err := util.NewUndoConfirmationKeyboard(latestTransaction.Id, contextId, 1)
 	if err != nil {
-		log.Error().Msgf("NewUndoConfirmationKeyboard error: %w", err)
+		log.Error().Msgf("NewUndoConfirmationKeyboard error: %v", err)
 		util.BotSendMessage(bot, update.Message.Chat.ID, message.GenericErrReplyMsg)
 		return
 	}
@@ -137,19 +137,19 @@ func (handler CommandHandler) StartTransaction(ctx context.Context, bot *tgbotap
 	userId := update.SentFrom().ID
 	user, err := handler.userRepo.FindUserById(ctx, userId)
 	if err != nil {
-		log.Error().Msgf("Error finding user for transact: %w", err)
+		log.Error().Msgf("Error finding user for transact: %v", err)
 		util.BotSendMessage(bot, update.Message.Chat.ID, message.GenericErrReplyMsg)
 		return
 	}
 	if user == nil {
-		log.Error().Msgf("User not found for transact: %w", userId)
+		log.Error().Msgf("User not found for transact: %v", userId)
 		util.BotSendMessage(bot, update.Message.Chat.ID, message.GenericErrReplyMsg)
 		return
 	}
 
 	floatString, err := parseFloatStringFromString(update.Message.Text)
 	if err != nil {
-		log.Error().Msgf("%w", err)
+		log.Error().Msgf("%v", err)
 		util.BotSendMessage(bot, update.Message.Chat.ID, cannotRecogniseAmountMsg)
 		return
 	}
@@ -162,21 +162,21 @@ func (handler CommandHandler) StartTransaction(ctx context.Context, bot *tgbotap
 
 	contextId, err := handler.messageContextRepo.Add(ctx, update.Message.Chat.ID, update.Message.MessageID, update.Message.Text)
 	if err != nil {
-		log.Error().Msgf("Add message context error: %w", err)
+		log.Error().Msgf("Add message context error: %v", err)
 		util.BotSendMessage(bot, update.Message.Chat.ID, message.GenericErrReplyMsg)
 		return
 	}
 
 	categories, err := handler.categoryRepo.FindAll(ctx)
 	if err != nil {
-		log.Error().Msgf("FindAll categories error: %w", err)
+		log.Error().Msgf("FindAll categories error: %v", err)
 		util.BotSendMessage(bot, update.Message.Chat.ID, message.GenericErrReplyMsg)
 		return
 	}
 
 	inlineKeyboard, err := newCategoriesKeyboard(categories, contextId, categoriesInlineColSize)
 	if err != nil {
-		log.Error().Msgf("newCategoriesKeyboard error: %w", err)
+		log.Error().Msgf("newCategoriesKeyboard error: %v", err)
 		util.BotSendMessage(bot, update.Message.Chat.ID, message.GenericErrReplyMsg)
 		return
 	}
@@ -190,7 +190,7 @@ func (handler CommandHandler) Stats(ctx context.Context, bot *tgbotapi.BotAPI, u
 	userId := update.SentFrom().ID
 	user, err := handler.userRepo.FindUserById(ctx, userId)
 	if err != nil {
-		log.Error().Msgf("Error finding user for stats: %w", err)
+		log.Error().Msgf("Error finding user for stats: %v", err)
 		util.BotSendMessage(bot, update.Message.Chat.ID, message.GenericErrReplyMsg)
 		return
 	}
@@ -200,7 +200,7 @@ func (handler CommandHandler) Stats(ctx context.Context, bot *tgbotapi.BotAPI, u
 	breakdowns, total, err := handler.transactionRepo.GetTransactionBreakdownByCategory(ctx, month, year, *user)
 
 	if err != nil {
-		log.Error().Msgf("Error getting breakdowns: %w", err)
+		log.Error().Msgf("Error getting breakdowns: %v", err)
 		util.BotSendMessage(bot, update.Message.Chat.ID, message.GenericErrReplyMsg)
 		return
 	}
@@ -217,14 +217,14 @@ func (handler CommandHandler) List(ctx context.Context, bot *tgbotapi.BotAPI, up
 	userId := update.SentFrom().ID
 	user, err := handler.userRepo.FindUserById(ctx, userId)
 	if err != nil {
-		log.Error().Msgf("Error finding user for stats: %w", err)
+		log.Error().Msgf("Error finding user for stats: %v", err)
 		util.BotSendMessage(bot, update.Message.Chat.ID, message.GenericErrReplyMsg)
 		return
 	}
 
 	contextId, err := handler.messageContextRepo.Add(ctx, update.Message.Chat.ID, update.Message.MessageID, update.Message.Text)
 	if err != nil {
-		log.Error().Msgf("Add message context error: %w", err)
+		log.Error().Msgf("Add message context error: %v", err)
 		util.BotSendMessage(bot, update.Message.Chat.ID, message.GenericErrReplyMsg)
 		return
 	}
@@ -233,7 +233,7 @@ func (handler CommandHandler) List(ctx context.Context, bot *tgbotapi.BotAPI, up
 
 	transactions, totalCount, err := handler.transactionRepo.ListByMonthAndYear(ctx, month, year, 0, pageSize, false, *user)
 	if err != nil {
-		log.Error().Msgf("Error getting list of transactions: %w", err)
+		log.Error().Msgf("Error getting list of transactions: %v", err)
 		util.BotSendMessage(bot, update.Message.Chat.ID, message.GenericErrReplyMsg)
 		return
 	}
@@ -244,7 +244,7 @@ func (handler CommandHandler) List(ctx context.Context, bot *tgbotapi.BotAPI, up
 
 	inlineKeyboard, err := util.NewPaginationKeyboard(totalCount, 0, pageSize, contextId, 2)
 	if err != nil {
-		log.Error().Msgf("Error generating keyboard for transaction pagination: %w", err)
+		log.Error().Msgf("Error generating keyboard for transaction pagination: %v", err)
 		util.BotSendMessage(bot, update.Message.Chat.ID, message.GenericErrReplyMsg)
 		return
 	}
@@ -268,12 +268,21 @@ func (handler CommandHandler) Export(ctx context.Context, bot *tgbotapi.BotAPI, 
 	}
 
 	month, year := util.ParseMonthYearFromMessage(update.Message.Text)
-	fileName := fmt.Sprintf("expenses_%02d_%v_*.csv", int(month), year)
+	fileName := fmt.Sprintf("expenses_%02d_%v_*.xlsx", int(month), year)
 	f, err := os.CreateTemp("", fileName)
 	defer os.Remove(f.Name())
 
-	csvWriter := csv.NewWriter(f)
-	defer csvWriter.Flush()
+	excel := excelize.NewFile()
+	defer excel.Close()
+
+	// add header row
+	excel.SetSheetRow("Sheet1", "A1", &[]string{
+		"Date",
+		"Category",
+		"Amount",
+		"Currency",
+		"Description",
+	})
 
 	offset := 0
 	for {
@@ -290,18 +299,26 @@ func (handler CommandHandler) Export(ctx context.Context, bot *tgbotapi.BotAPI, 
 			util.BotSendMessage(bot, update.Message.Chat.ID, message.GenericErrReplyMsg)
 			return
 		}
-		for _, t := range transactions {
-			data := []string{
-				t.Datetime.In(user.Location).String(),
+		for i, t := range transactions {
+			data := []interface{}{
+				t.Datetime.In(user.Location),
 				t.CategoryName,
-				fmt.Sprintf("%v", t.Amount.AsMajorUnits()),
+				t.Amount.AsMajorUnits(),
 				t.Amount.Currency().Code,
 				t.Description,
 			}
-			csvWriter.Write(data)
-			csvWriter.Flush()
+
+			dataRow := i + 2
+			excel.SetSheetRow("Sheet1", fmt.Sprintf("A%d", dataRow), &data)
 		}
 		offset += pageSize
+	}
+
+	err = excel.SaveAs(f.Name())
+	if err != nil {
+		log.Error().Msgf("Error saving export excel file: %v", err)
+		util.BotSendMessage(bot, update.Message.Chat.ID, message.GenericErrReplyMsg)
+		return
 	}
 
 	docMsg := tgbotapi.NewDocument(update.Message.Chat.ID, tgbotapi.FilePath(f.Name()))
