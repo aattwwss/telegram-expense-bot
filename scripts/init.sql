@@ -1,3 +1,5 @@
+BEGIN;
+
 create table currency
 (
     code        varchar(3)           not null
@@ -45,6 +47,7 @@ create table category
     id                  serial
         primary key,
     name                varchar(50) not null,
+    display_order       integer     not null,
     transaction_type_id integer     not null
         references transaction_type,
     unique (name, transaction_type_id)
@@ -96,3 +99,5 @@ values  ('Bills', 1, 1),
         ('Shopping', 1, 11),
         ('Transport', 1, 12),
         ('Other', 1, 99);
+
+COMMIT;
