@@ -348,7 +348,7 @@ func autoFitColumnWidth(excel *excelize.File, sheetName string) error {
 	if err != nil {
 		return err
 	}
-	for idx, col := range cols {
+	for i, col := range cols {
 		largestWidth := 0
 		for _, rowCell := range col {
 			cellWidth := utf8.RuneCountInString(rowCell) + 2 // + 2 for margin
@@ -356,7 +356,7 @@ func autoFitColumnWidth(excel *excelize.File, sheetName string) error {
 				largestWidth = cellWidth
 			}
 		}
-		name, err := excelize.ColumnNumberToName(idx + 1)
+		name, err := excelize.ColumnNumberToName(i + 1)
 		if err != nil {
 			return err
 		}
