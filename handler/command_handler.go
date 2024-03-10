@@ -341,8 +341,9 @@ func (handler CommandHandler) Export(ctx context.Context, bot *tgbotapi.BotAPI, 
 	docMsg.Caption = fmt.Sprintf("Exported expenses for %s %v", month.String(), year)
 	util.BotSendWrapper(bot, docMsg)
 }
+
+// autofit all columns according to their text content
 func autoFitColumnWidth(excel *excelize.File, sheetName string) error {
-	// Autofit all columns according to their text content
 	cols, err := excel.GetCols(sheetName)
 	if err != nil {
 		return err
