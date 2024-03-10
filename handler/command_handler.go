@@ -6,6 +6,7 @@ import (
 	"os"
 	"strings"
 	"time"
+	"unicode/utf8"
 
 	"github.com/Rhymond/go-money"
 	"github.com/aattwwss/telegram-expense-bot/domain"
@@ -276,13 +277,21 @@ func (handler CommandHandler) Export(ctx context.Context, bot *tgbotapi.BotAPI, 
 	defer excel.Close()
 
 	// add header row
-	excel.SetSheetRow("Sheet1", "A1", &[]string{
+	headers := []string{
 		"Date",
 		"Description",
 		"Amount",
 		"Category",
 		"Currency",
-	})
+	}
+	excel.SetSheetRow("Sheet1", "A1", &headers)
+	style := excelize.Style{
+		Font: &excelize.Font{
+			Bold: true,
+		},
+	}
+	styleId, _ := excel.NewStyle(&style)
+	excel.SetRowStyle("Sheet1", 1, 1, styleId)
 
 	offset := 0
 	for {
@@ -308,10 +317,17 @@ func (handler CommandHandler) Export(ctx context.Context, bot *tgbotapi.BotAPI, 
 				t.Amount.Currency().Code,
 			}
 
-			dataRow := i + 2
-			excel.SetSheetRow("Sheet1", fmt.Sprintf("A%d", dataRow), &data)
+			cellName, _ := excelize.CoordinatesToCellName(1, i+2)
+			excel.SetSheetRow("Sheet1", cellName, &data)
 		}
 		offset += pageSize
+	}
+
+	err = autoFitColumnWidth(excel, "Sheet1")
+	if err != nil {
+		log.Error().Msgf("Error auto fitting column width: %v", err)
+		util.BotSendMessage(bot, update.Message.Chat.ID, message.GenericErrReplyMsg)
+		return
 	}
 
 	err = excel.SaveAs(f.Name())
@@ -324,6 +340,28 @@ func (handler CommandHandler) Export(ctx context.Context, bot *tgbotapi.BotAPI, 
 	docMsg := tgbotapi.NewDocument(update.Message.Chat.ID, tgbotapi.FilePath(f.Name()))
 	docMsg.Caption = fmt.Sprintf("Exported expenses for %s %v", month.String(), year)
 	util.BotSendWrapper(bot, docMsg)
+}
+func autoFitColumnWidth(excel *excelize.File, sheetName string) error {
+	// Autofit all columns according to their text content
+	cols, err := excel.GetCols(sheetName)
+	if err != nil {
+		return err
+	}
+	for idx, col := range cols {
+		largestWidth := 0
+		for _, rowCell := range col {
+			cellWidth := utf8.RuneCountInString(rowCell) + 2 // + 2 for margin
+			if cellWidth > largestWidth {
+				largestWidth = cellWidth
+			}
+		}
+		name, err := excelize.ColumnNumberToName(idx + 1)
+		if err != nil {
+			return err
+		}
+		excel.SetColWidth(sheetName, name, name, float64(largestWidth))
+	}
+	return nil
 }
 
 func newTransactionTypesKeyboard(transactionTypes []domain.TransactionType, messageContextId int, colSize int) ([][]tgbotapi.InlineKeyboardButton, error) {
