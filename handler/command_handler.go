@@ -317,7 +317,7 @@ func (handler CommandHandler) Export(ctx context.Context, bot *tgbotapi.BotAPI, 
 				t.Amount.Currency().Code,
 			}
 
-			cellName, _ := excelize.CoordinatesToCellName(1, i+2)
+			cellName, _ := excelize.CoordinatesToCellName(1, offset+i+2)
 			excel.SetSheetRow("Sheet1", cellName, &data)
 		}
 		offset += pageSize
