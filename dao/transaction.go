@@ -10,11 +10,6 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-const (
-	ASC  = "ASC"
-	DESC = "DESC"
-)
-
 type TransactionDAO struct {
 	db *pgxpool.Pool
 }
@@ -33,6 +28,9 @@ func (dao TransactionDAO) GetById(ctx context.Context, id int, userId int64) (en
 	err := pgxscan.Select(ctx, dao.db, &transactions, sql, id, userId)
 	if err != nil {
 		return entity.Transaction{}, err
+	}
+	if len(transactions) == 0 {
+		return entity.Transaction{}, fmt.Errorf("transaction not found: id=%d userId=%d", id, userId)
 	}
 	return *transactions[0], nil
 }
@@ -100,9 +98,9 @@ func (dao TransactionDAO) GetBreakdownByCategory(ctx context.Context, dateFrom t
 }
 
 func (dao TransactionDAO) ListByMonthAndYear(ctx context.Context, dateFrom time.Time, dateTo time.Time, offset int, limit int, isAsc bool, userId int64) ([]entity.Transaction, error) {
-	sortOrder := ASC
-	if !isAsc {
-		sortOrder = DESC
+	sortOrder := "DESC"
+	if isAsc {
+		sortOrder = "ASC"
 	}
 
 	var entities []entity.Transaction
@@ -112,10 +110,9 @@ func (dao TransactionDAO) ListByMonthAndYear(ctx context.Context, dateFrom time.
 		    WHERE t.datetime >= $1::timestamptz
 			  AND t.datetime < $2::timestamptz
 			  AND t.user_id = $3
-		    ORDER BY t.datetime %s 
+		    ORDER BY t.datetime ` + sortOrder + `
 			OFFSET $4 LIMIT $5
 		`
-	sql = fmt.Sprintf(sql, sortOrder)
 	err := pgxscan.Select(ctx, dao.db, &entities, sql, dateFrom.Format(time.RFC3339), dateTo.Format(time.RFC3339), userId, offset, limit)
 	if err != nil {
 		return nil, err

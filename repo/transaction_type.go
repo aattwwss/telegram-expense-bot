@@ -2,8 +2,9 @@ package repo
 
 import (
 	"context"
+
 	"github.com/aattwwss/telegram-expense-bot/dao"
-	"github.com/aattwwss/telegram-expense-bot/domain"
+	"github.com/aattwwss/telegram-expense-bot/entity"
 )
 
 type TransactionTypeRepo struct {
@@ -14,39 +15,14 @@ func NewTransactionTypeRepo(transactionTypeDao dao.TransactionTypeDAO) Transacti
 	return TransactionTypeRepo{transactionTypeDao: transactionTypeDao}
 }
 
-func (repo TransactionTypeRepo) GetAll(ctx context.Context) ([]domain.TransactionType, error) {
-	entities, err := repo.transactionTypeDao.GetAll(ctx)
+func (repo TransactionTypeRepo) GetAll(ctx context.Context) ([]*entity.TransactionType, error) {
+	return repo.transactionTypeDao.GetAll(ctx)
+}
+
+func (repo TransactionTypeRepo) GetById(ctx context.Context, id int) (*entity.TransactionType, error) {
+	e, err := repo.transactionTypeDao.GetById(ctx, id)
 	if err != nil {
 		return nil, err
 	}
-
-	var types []domain.TransactionType
-
-	for _, e := range entities {
-		transactionType := domain.TransactionType{
-			Id:         e.Id,
-			Name:       e.Name,
-			Multiplier: e.Multiplier,
-			ReplyText:  e.ReplyText,
-		}
-		types = append(types, transactionType)
-	}
-
-	return types, nil
-}
-
-func (repo TransactionTypeRepo) GetById(ctx context.Context, id int) (domain.TransactionType, error) {
-	e, err := repo.transactionTypeDao.GetById(ctx, id)
-	if err != nil {
-		return domain.TransactionType{}, err
-	}
-
-	transactionType := domain.TransactionType{
-		Id:         e.Id,
-		Name:       e.Name,
-		Multiplier: e.Multiplier,
-		ReplyText:  e.ReplyText,
-	}
-
-	return transactionType, nil
+	return e, nil
 }

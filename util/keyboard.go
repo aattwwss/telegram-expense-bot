@@ -93,7 +93,7 @@ func NewInlineKeyboardConfig(label string, data string) InlineKeyboardConfig {
 
 func NewInlineKeyboard(configs []InlineKeyboardConfig, messageContextId int, colSize int, cancellable bool) [][]tgbotapi.InlineKeyboardButton {
 	numOfRows := roundUpDivision(len(configs), colSize)
-	itemsKeyboards := [][]tgbotapi.InlineKeyboardButton{{}} // important to initiate the inner array to allow empty keyboard
+	itemsKeyboards := make([][]tgbotapi.InlineKeyboardButton, 0, numOfRows+1)
 
 	for i := 0; i < numOfRows; i++ {
 		row := tgbotapi.NewInlineKeyboardRow()

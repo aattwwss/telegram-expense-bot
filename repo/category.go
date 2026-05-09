@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/aattwwss/telegram-expense-bot/dao"
-	"github.com/aattwwss/telegram-expense-bot/domain"
+	"github.com/aattwwss/telegram-expense-bot/entity"
 )
 
 type CategoryRepo struct {
@@ -15,49 +15,18 @@ func NewCategoryRepo(categoryDao dao.CategoryDAO) CategoryRepo {
 	return CategoryRepo{categoryDao: categoryDao}
 }
 
-func (repo CategoryRepo) FindAll(ctx context.Context) ([]domain.Category, error) {
-	var categories []domain.Category
-	entities, err := repo.categoryDao.FindAll(ctx)
+func (repo CategoryRepo) FindAll(ctx context.Context) ([]*entity.Category, error) {
+	return repo.categoryDao.FindAll(ctx)
+}
+
+func (repo CategoryRepo) FindByTransactionTypeId(ctx context.Context, transactionTypeId int) ([]*entity.Category, error) {
+	return repo.categoryDao.FindByTransactionTypeId(ctx, transactionTypeId)
+}
+
+func (repo CategoryRepo) GetById(ctx context.Context, id int) (*entity.Category, error) {
+	e, err := repo.categoryDao.GetById(ctx, id)
 	if err != nil {
 		return nil, err
 	}
-	for _, c := range entities {
-		category := domain.Category{
-			Id:                c.Id,
-			Name:              c.Name,
-			TransactionTypeId: c.TransactionTypeId,
-		}
-		categories = append(categories, category)
-	}
-	return categories, nil
-}
-
-func (repo CategoryRepo) FindByTransactionTypeId(ctx context.Context, transactionTypeId int) ([]domain.Category, error) {
-	var categories []domain.Category
-	entities, err := repo.categoryDao.FindByTransactionTypeId(ctx, transactionTypeId)
-	if err != nil {
-		return nil, err
-	}
-	for _, c := range entities {
-		category := domain.Category{
-			Id:                c.Id,
-			Name:              c.Name,
-			TransactionTypeId: c.TransactionTypeId,
-		}
-		categories = append(categories, category)
-	}
-	return categories, nil
-}
-
-func (repo CategoryRepo) GetById(ctx context.Context, id int) (domain.Category, error) {
-	c, err := repo.categoryDao.GetById(ctx, id)
-	if err != nil {
-		return domain.Category{}, err
-	}
-	category := domain.Category{
-		Id:                c.Id,
-		Name:              c.Name,
-		TransactionTypeId: c.TransactionTypeId,
-	}
-	return category, nil
+	return &e, nil
 }

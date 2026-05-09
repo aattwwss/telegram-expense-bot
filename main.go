@@ -8,6 +8,8 @@ import (
 	"github.com/rs/zerolog"
 	"net/http"
 	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
 	"github.com/aattwwss/telegram-expense-bot/config"
@@ -35,12 +37,11 @@ func getCallbackType(callbackData string) (enum.CallbackType, error) {
 }
 
 func handleCallback(ctx context.Context, bot *tgbotapi.BotAPI, update tgbotapi.Update, callbackHandler *handler.CallbackHandler) {
-	go util.BotDeleteMessage(bot, update.CallbackQuery.Message.Chat.ID, update.CallbackQuery.Message.MessageID)
-
 	callbackType, err := getCallbackType(update.CallbackQuery.Data)
 	if err != nil {
 		log.Error().Msg("handleCallback getCallbackType error: unrecognised callback")
 		util.BotSendMessage(bot, update.CallbackQuery.Message.Chat.ID, message.GenericErrReplyMsg)
+		return
 	}
 
 	switch callbackType {
@@ -150,7 +151,10 @@ func (h telegramHook) Run(e *zerolog.Event, level zerolog.Level, msg string) {
 
 		logMsg := fmt.Sprintf("<b>%s</b><code>\n\nlevel: %s\ntime : %s\nmsg  : %s</code>", h.applicationName, level, time.Now().Format("2006-01-02 15:04:05.000"), msg)
 		requestBody := fmt.Sprintf(`{"chat_id": "%s", "text": "%s", "parse_mode": "HTML"}`, h.chatId, logMsg)
-		resp, _ := http.Post(apiURL, "application/json", bytes.NewBuffer([]byte(requestBody)))
+		resp, err := http.Post(apiURL, "application/json", bytes.NewBuffer([]byte(requestBody)))
+		if err != nil {
+			return
+		}
 		defer resp.Body.Close()
 	}
 }
@@ -186,16 +190,14 @@ func main() {
 	messageContextDao := dao.NewMessageContextDao(dbLoaded)
 	transactionTypeDao := dao.NewTransactionTypeDAO(dbLoaded)
 	categoryDao := dao.NewCategoryDAO(dbLoaded)
-	statDao := dao.NewStatDAO(dbLoaded)
 
 	transactionRepo := repo.NewTransactionRepo(transactionDao)
 	messageContextRepo := repo.NewMessageContextRepo(messageContextDao)
 	transactionTypeRepo := repo.NewTransactionTypeRepo(transactionTypeDao)
 	userRepo := repo.NewUserRepo(userDAO)
-	statRepo := repo.NewStatRepo(statDao)
 	categoryRepo := repo.NewCategoryRepo(categoryDao)
 
-	commandHandler := handler.NewCommandHandler(userRepo, transactionRepo, messageContextRepo, transactionTypeRepo, categoryRepo, statRepo)
+	commandHandler := handler.NewCommandHandler(userRepo, transactionRepo, messageContextRepo, transactionTypeRepo, categoryRepo)
 	callbackHandler := handler.NewCallbackHandler(userRepo, transactionRepo, messageContextRepo, transactionTypeRepo, categoryRepo)
 
 	bot, err := tgbotapi.NewBotAPI(cfg.TelegramApiToken)
@@ -225,5 +227,11 @@ func main() {
 	for i := 0; i < cfg.NumRoutines; i++ {
 		go processUpdate(bot, updates)
 	}
-	select {}
+
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+	<-quit
+
+	log.Info().Msg("Shutting down...")
+	dbLoaded.Close()
 }
