@@ -1,8 +1,10 @@
 package domain
 
 import (
-	"github.com/Rhymond/go-money"
 	"time"
+
+	"github.com/Rhymond/go-money"
+	"github.com/aattwwss/telegram-expense-bot/entity"
 )
 
 type User struct {
@@ -10,4 +12,17 @@ type User struct {
 	Locale   string
 	Currency *money.Currency
 	Location *time.Location
+}
+
+func UserFromEntity(e entity.User) (*User, error) {
+	loc, err := time.LoadLocation(e.Timezone)
+	if err != nil {
+		return nil, err
+	}
+	return &User{
+		Id:       e.Id,
+		Locale:   e.Locale,
+		Currency: money.GetCurrency(e.Currency),
+		Location: loc,
+	}, nil
 }

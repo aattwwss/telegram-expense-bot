@@ -2,6 +2,7 @@ package dao
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/aattwwss/telegram-expense-bot/entity"
 	"github.com/georgysavva/scany/v2/pgxscan"
@@ -39,6 +40,9 @@ func (dao MessageContextDAO) GetById(ctx context.Context, id int) (*entity.Messa
 	err := pgxscan.Select(ctx, dao.db, &messageContextEntities, sql, id)
 	if err != nil {
 		return nil, err
+	}
+	if len(messageContextEntities) == 0 {
+		return nil, fmt.Errorf("message context not found: id=%d", id)
 	}
 	return &messageContextEntities[0], nil
 }

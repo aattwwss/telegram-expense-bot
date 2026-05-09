@@ -10,9 +10,9 @@ import (
 
 	"github.com/Rhymond/go-money"
 	"github.com/aattwwss/telegram-expense-bot/domain"
+	"github.com/aattwwss/telegram-expense-bot/entity"
 	"github.com/aattwwss/telegram-expense-bot/enum"
 	"github.com/aattwwss/telegram-expense-bot/message"
-	"github.com/aattwwss/telegram-expense-bot/repo"
 	"github.com/aattwwss/telegram-expense-bot/util"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/rs/zerolog/log"
@@ -23,14 +23,14 @@ const (
 )
 
 type CallbackHandler struct {
-	userRepo            repo.UserRepo
-	transactionRepo     repo.TransactionRepo
-	messageContextRepo  repo.MessageContextRepo
-	transactionTypeRepo repo.TransactionTypeRepo
-	categoryRepo        repo.CategoryRepo
+	userRepo            UserRepo
+	transactionRepo     TransactionRepo
+	messageContextRepo  MessageContextRepo
+	transactionTypeRepo TransactionTypeRepo
+	categoryRepo        CategoryRepo
 }
 
-func NewCallbackHandler(userRepo repo.UserRepo, transactionRepo repo.TransactionRepo, messageContextRepo repo.MessageContextRepo, transactionTypeRepo repo.TransactionTypeRepo, categoryRepo repo.CategoryRepo) CallbackHandler {
+func NewCallbackHandler(userRepo UserRepo, transactionRepo TransactionRepo, messageContextRepo MessageContextRepo, transactionTypeRepo TransactionTypeRepo, categoryRepo CategoryRepo) CallbackHandler {
 	return CallbackHandler{
 		userRepo:            userRepo,
 		transactionRepo:     transactionRepo,
@@ -41,6 +41,8 @@ func NewCallbackHandler(userRepo repo.UserRepo, transactionRepo repo.Transaction
 }
 
 func (handler CallbackHandler) FromCategory(ctx context.Context, bot *tgbotapi.BotAPI, callbackQuery *tgbotapi.CallbackQuery) {
+	defer util.BotDeleteMessage(bot, callbackQuery.Message.Chat.ID, callbackQuery.Message.MessageID)
+
 	user, err := handler.userRepo.FindUserById(ctx, callbackQuery.From.ID)
 	if err != nil {
 		log.Error().Msgf("Error finding user for category: %v", err)
@@ -126,6 +128,8 @@ func (handler CallbackHandler) FromCategory(ctx context.Context, bot *tgbotapi.B
 }
 
 func (handler CallbackHandler) FromPagination(ctx context.Context, bot *tgbotapi.BotAPI, callbackQuery *tgbotapi.CallbackQuery) {
+	defer util.BotDeleteMessage(bot, callbackQuery.Message.Chat.ID, callbackQuery.Message.MessageID)
+
 	// TODO Find a way to handle the persisting context when paginating
 	userId := callbackQuery.From.ID
 	user, err := handler.userRepo.FindUserById(ctx, userId)
@@ -153,7 +157,16 @@ func (handler CallbackHandler) FromPagination(ctx context.Context, bot *tgbotapi
 	month, year := util.ParseMonthYearFromMessage(messageContext)
 
 	offset, limit := paginationCallback.Offset, paginationCallback.Limit
-	transactions, totalCount, err := handler.transactionRepo.ListByMonthAndYear(ctx, month, year, offset, limit, false, *user)
+	q := entity.TransactionListQuery{
+		Month:    month,
+		Year:     year,
+		Offset:   offset,
+		Limit:    limit,
+		Asc:      false,
+		UserId:   user.Id,
+		Location: user.Location,
+	}
+	transactions, totalCount, err := handler.transactionRepo.ListByMonthAndYear(ctx, q)
 
 	inlineKeyboard, err := util.NewPaginationKeyboard(totalCount, offset, limit, paginationCallback.MessageContextId, 2)
 	if err != nil {
@@ -170,6 +183,8 @@ func (handler CallbackHandler) FromPagination(ctx context.Context, bot *tgbotapi
 }
 
 func (handler CallbackHandler) FromUndo(ctx context.Context, bot *tgbotapi.BotAPI, callbackQuery *tgbotapi.CallbackQuery) {
+	defer util.BotDeleteMessage(bot, callbackQuery.Message.Chat.ID, callbackQuery.Message.MessageID)
+
 	userId := callbackQuery.From.ID
 	var undoCallback domain.UndoCallback
 
@@ -200,6 +215,8 @@ func (handler CallbackHandler) FromUndo(ctx context.Context, bot *tgbotapi.BotAP
 }
 
 func (handler CallbackHandler) FromCancel(ctx context.Context, bot *tgbotapi.BotAPI, callbackQuery *tgbotapi.CallbackQuery) {
+	defer util.BotDeleteMessage(bot, callbackQuery.Message.Chat.ID, callbackQuery.Message.MessageID)
+
 	var genericCallback domain.GenericCallback
 	err := json.Unmarshal([]byte(callbackQuery.Data), &genericCallback)
 	if err != nil {
@@ -210,7 +227,7 @@ func (handler CallbackHandler) FromCancel(ctx context.Context, bot *tgbotapi.Bot
 	handler.deleteMessageContext(ctx, genericCallback.MessageContextId)
 }
 
-func newCategoriesKeyboard(categories []domain.Category, messageContextId int, colSize int) ([][]tgbotapi.InlineKeyboardButton, error) {
+func newCategoriesKeyboard(categories []*entity.Category, messageContextId int, colSize int) ([][]tgbotapi.InlineKeyboardButton, error) {
 	var configs []util.InlineKeyboardConfig
 	for _, category := range categories {
 		data := domain.CategoryCallback{
@@ -253,11 +270,14 @@ func decimalise(value float64, currency money.Currency) (int64, error) {
 	return res, err
 }
 
-// removeNonNumeric removes all non-numeric characters from a string
+// removeNonNumeric removes all non-numeric characters from a string, preserving a leading minus sign
 func removeNonNumeric(s string) string {
 	var sb strings.Builder
-	for _, ch := range s {
+	for i, ch := range s {
 		if ch >= '0' && ch <= '9' {
+			sb.WriteRune(ch)
+		}
+		if ch == '-' && i == 0 {
 			sb.WriteRune(ch)
 		}
 	}

@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/Rhymond/go-money"
+	"github.com/aattwwss/telegram-expense-bot/entity"
 )
 
 const PercentCategoryAmountMsg = "<code>%s%.1f%% %s %s%s\n</code>" // E.g. 82.8% Taxes    $1,234.00
@@ -21,6 +22,18 @@ type Transaction struct {
 	Description  string
 	UserId       int64
 	Amount       *money.Money
+}
+
+func TransactionFromEntity(e entity.Transaction) Transaction {
+	return Transaction{
+		Id:           e.Id,
+		Datetime:     e.Datetime,
+		CategoryId:   e.CategoryId,
+		CategoryName: e.CategoryName,
+		Description:  e.Description,
+		UserId:       e.UserId,
+		Amount:       money.New(e.Amount, e.Currency),
+	}
 }
 
 type Transactions []Transaction

@@ -6,7 +6,7 @@ import (
 	"regexp"
 )
 
-var floatParser = regexp.MustCompile(`^(-?\d[\d]*[.]?[\d{2}]*)`)
+var floatParser = regexp.MustCompile(`^(-?\d+\.?\d{0,2})`)
 
 // parseFloatStringFromString retrieves a valid float string from a string
 func parseFloatStringFromString(s string) (string, error) {

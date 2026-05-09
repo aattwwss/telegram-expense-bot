@@ -26,7 +26,7 @@ func (s MonthlySummaries) GetLongestLabelLength() int {
 	return longestLabel
 }
 
-func (s MonthlySummaries) GenerateReportText() string {
+func (s MonthlySummaries) GenerateReportText(currencyCode string) string {
 	currMonth := ""
 	var totalAmountForTheMonth int64
 	var msg string
@@ -42,11 +42,11 @@ func (s MonthlySummaries) GenerateReportText() string {
 		}
 
 		totalAmountForTheMonth += summary.Amount * summary.Multiplier
-		moneyAmount := money.New(summary.Amount, money.SGD)
+		moneyAmount := money.New(summary.Amount, currencyCode)
 		msg += fmt.Sprintf(transactionSummaryHTMLMsg, summary.TransactionTypeLabel, summary.GetPaddedSpacesForLabel(longestLabel), moneyAmount.Display())
 
 		if i == len(s)-1 || s[i+1].Month.String()[:3] != currMonth {
-			msg += fmt.Sprintf(transactionTotalHTMLMsg, money.New(totalAmountForTheMonth, money.SGD).Display())
+			msg += fmt.Sprintf(transactionTotalHTMLMsg, money.New(totalAmountForTheMonth, currencyCode).Display())
 		}
 	}
 	return msg

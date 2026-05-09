@@ -2,11 +2,10 @@ package repo
 
 import (
 	"context"
-	"github.com/Rhymond/go-money"
+
 	"github.com/aattwwss/telegram-expense-bot/dao"
 	"github.com/aattwwss/telegram-expense-bot/domain"
 	"github.com/aattwwss/telegram-expense-bot/entity"
-	"time"
 )
 
 type UserRepo struct {
@@ -22,24 +21,10 @@ func (repo UserRepo) FindUserById(ctx context.Context, id int64) (*domain.User, 
 	if err != nil {
 		return nil, err
 	}
-
 	if userEntity == nil {
 		return nil, nil
 	}
-
-	loc, err := time.LoadLocation(userEntity.Timezone)
-	if err != nil {
-		return nil, err
-	}
-
-	user := domain.User{
-		Id:       userEntity.Id,
-		Locale:   userEntity.Locale,
-		Currency: money.GetCurrency(userEntity.Currency),
-		Location: loc,
-	}
-
-	return &user, nil
+	return domain.UserFromEntity(*userEntity)
 }
 
 func (repo UserRepo) Add(ctx context.Context, user domain.User) error {

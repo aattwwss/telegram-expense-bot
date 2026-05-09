@@ -10,9 +10,9 @@ import (
 
 	"github.com/Rhymond/go-money"
 	"github.com/aattwwss/telegram-expense-bot/domain"
+	"github.com/aattwwss/telegram-expense-bot/entity"
 	"github.com/aattwwss/telegram-expense-bot/enum"
 	"github.com/aattwwss/telegram-expense-bot/message"
-	"github.com/aattwwss/telegram-expense-bot/repo"
 	"github.com/aattwwss/telegram-expense-bot/util"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/rs/zerolog/log"
@@ -39,22 +39,20 @@ const (
 )
 
 type CommandHandler struct {
-	transactionRepo     repo.TransactionRepo
-	messageContextRepo  repo.MessageContextRepo
-	transactionTypeRepo repo.TransactionTypeRepo
-	categoryRepo        repo.CategoryRepo
-	statRepo            repo.StatRepo
-	userRepo            repo.UserRepo
+	transactionRepo     TransactionRepo
+	messageContextRepo  MessageContextRepo
+	transactionTypeRepo TransactionTypeRepo
+	categoryRepo        CategoryRepo
+	userRepo            UserRepo
 }
 
-func NewCommandHandler(userRepo repo.UserRepo, transactionRepo repo.TransactionRepo, messageContextRepo repo.MessageContextRepo, transactionTypeRepo repo.TransactionTypeRepo, categoryRepo repo.CategoryRepo, statRepo repo.StatRepo) CommandHandler {
+func NewCommandHandler(userRepo UserRepo, transactionRepo TransactionRepo, messageContextRepo MessageContextRepo, transactionTypeRepo TransactionTypeRepo, categoryRepo CategoryRepo) CommandHandler {
 	return CommandHandler{
 		userRepo:            userRepo,
 		transactionRepo:     transactionRepo,
 		messageContextRepo:  messageContextRepo,
 		transactionTypeRepo: transactionTypeRepo,
 		categoryRepo:        categoryRepo,
-		statRepo:            statRepo,
 	}
 }
 
@@ -112,6 +110,7 @@ func (handler CommandHandler) Undo(ctx context.Context, bot *tgbotapi.BotAPI, up
 
 	if latestTransaction == nil {
 		util.BotSendMessage(bot, update.Message.Chat.ID, message.TransactionLatestNotFound)
+		return
 	}
 
 	contextId, err := handler.messageContextRepo.Add(ctx, update.Message.Chat.ID, update.Message.MessageID, update.Message.Text)
@@ -232,7 +231,16 @@ func (handler CommandHandler) List(ctx context.Context, bot *tgbotapi.BotAPI, up
 
 	month, year := util.ParseMonthYearFromMessage(update.Message.Text)
 
-	transactions, totalCount, err := handler.transactionRepo.ListByMonthAndYear(ctx, month, year, 0, pageSize, false, *user)
+	q := entity.TransactionListQuery{
+		Month:    month,
+		Year:     year,
+		Offset:   0,
+		Limit:    pageSize,
+		Asc:      false,
+		UserId:   user.Id,
+		Location: user.Location,
+	}
+	transactions, totalCount, err := handler.transactionRepo.ListByMonthAndYear(ctx, q)
 	if err != nil {
 		log.Error().Msgf("Error getting list of transactions: %v", err)
 		util.BotSendMessage(bot, update.Message.Chat.ID, message.GenericErrReplyMsg)
@@ -271,6 +279,11 @@ func (handler CommandHandler) Export(ctx context.Context, bot *tgbotapi.BotAPI, 
 	month, year := util.ParseMonthYearFromMessage(update.Message.Text)
 	fileName := fmt.Sprintf("expenses_%02d_%v_*.xlsx", int(month), year)
 	f, err := os.CreateTemp("", fileName)
+	if err != nil {
+		log.Error().Msgf("Error creating temp file: %v", err)
+		util.BotSendMessage(bot, update.Message.Chat.ID, message.GenericErrReplyMsg)
+		return
+	}
 	defer os.Remove(f.Name())
 
 	excel := excelize.NewFile()
@@ -295,7 +308,16 @@ func (handler CommandHandler) Export(ctx context.Context, bot *tgbotapi.BotAPI, 
 
 	offset := 0
 	for {
-		transactions, totalCount, err := handler.transactionRepo.ListByMonthAndYear(ctx, month, year, offset, pageSize, true, *user)
+		q := entity.TransactionListQuery{
+			Month:    month,
+			Year:     year,
+			Offset:   offset,
+			Limit:    pageSize,
+			Asc:      true,
+			UserId:   user.Id,
+			Location: user.Location,
+		}
+		transactions, totalCount, err := handler.transactionRepo.ListByMonthAndYear(ctx, q)
 		if totalCount == 0 {
 			util.BotSendMessage(bot, update.Message.Chat.ID, transactionListEmptyMsg)
 			return
@@ -365,7 +387,7 @@ func autoFitColumnWidth(excel *excelize.File, sheetName string) error {
 	return nil
 }
 
-func newTransactionTypesKeyboard(transactionTypes []domain.TransactionType, messageContextId int, colSize int) ([][]tgbotapi.InlineKeyboardButton, error) {
+func newTransactionTypesKeyboard(transactionTypes []*entity.TransactionType, messageContextId int, colSize int) ([][]tgbotapi.InlineKeyboardButton, error) {
 	var configs []util.InlineKeyboardConfig
 	for _, transactionType := range transactionTypes {
 		data := domain.TransactionTypeCallback{

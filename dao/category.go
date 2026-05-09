@@ -2,6 +2,7 @@ package dao
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/aattwwss/telegram-expense-bot/entity"
 	"github.com/georgysavva/scany/v2/pgxscan"
@@ -55,6 +56,9 @@ func (dao CategoryDAO) GetById(ctx context.Context, id int) (entity.Category, er
 	err := pgxscan.Select(ctx, dao.db, &categories, sql, id)
 	if err != nil {
 		return entity.Category{}, err
+	}
+	if len(categories) == 0 {
+		return entity.Category{}, fmt.Errorf("category not found: id=%d", id)
 	}
 	return *categories[0], nil
 }

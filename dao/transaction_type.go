@@ -2,6 +2,8 @@ package dao
 
 import (
 	"context"
+	"fmt"
+
 	"github.com/aattwwss/telegram-expense-bot/entity"
 	"github.com/georgysavva/scany/v2/pgxscan"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -40,6 +42,9 @@ func (dao TransactionTypeDAO) GetById(ctx context.Context, id int) (*entity.Tran
 	err := pgxscan.Select(ctx, dao.db, &types, sql, id)
 	if err != nil {
 		return nil, err
+	}
+	if len(types) == 0 {
+		return nil, fmt.Errorf("transaction type not found: id=%d", id)
 	}
 	return types[0], nil
 }

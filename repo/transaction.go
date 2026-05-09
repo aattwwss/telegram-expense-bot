@@ -42,41 +42,21 @@ func (repo TransactionRepo) Add(ctx context.Context, t domain.Transaction) error
 
 func (repo TransactionRepo) GetById(ctx context.Context, id int, userId int64) (domain.Transaction, error) {
 	e, err := repo.transactionDao.GetById(ctx, id, userId)
-
 	if err != nil {
 		return domain.Transaction{}, err
 	}
-
-	t := domain.Transaction{
-		Id:          e.Id,
-		Datetime:    e.Datetime,
-		CategoryId:  e.CategoryId,
-		Description: e.Description,
-		UserId:      e.UserId,
-		Amount:      money.New(e.Amount, e.Currency),
-	}
-	return t, nil
+	return domain.TransactionFromEntity(e), nil
 }
 
 func (repo TransactionRepo) FindLastestByUserId(ctx context.Context, userId int64) (*domain.Transaction, error) {
 	e, err := repo.transactionDao.FindLatestByUserId(ctx, userId)
-
 	if err != nil {
 		return nil, err
 	}
-
 	if e == nil {
 		return nil, nil
 	}
-
-	t := domain.Transaction{
-		Id:          e.Id,
-		Datetime:    e.Datetime,
-		CategoryId:  e.CategoryId,
-		Description: e.Description,
-		UserId:      e.UserId,
-		Amount:      money.New(e.Amount, e.Currency),
-	}
+	t := domain.TransactionFromEntity(*e)
 	return &t, nil
 }
 
@@ -126,11 +106,11 @@ func (repo TransactionRepo) GetTransactionBreakdownByCategory(ctx context.Contex
 	return breakdowns, money.New(totalAmount, user.Currency.Code), nil
 }
 
-func (repo TransactionRepo) ListByMonthAndYear(ctx context.Context, month time.Month, year int, offset int, limit int, isAsc bool, user domain.User) (domain.Transactions, int, error) {
+func (repo TransactionRepo) ListByMonthAndYear(ctx context.Context, q entity.TransactionListQuery) (domain.Transactions, int, error) {
 	var transactions domain.Transactions
 
-	dateFromString := fmt.Sprintf("%v-%02d-01", year, int(month))
-	dateFrom, err := time.ParseInLocation("2006-01-02", dateFromString, user.Location)
+	dateFromString := fmt.Sprintf("%v-%02d-01", q.Year, int(q.Month))
+	dateFrom, err := time.ParseInLocation("2006-01-02", dateFromString, q.Location)
 
 	if err != nil {
 		return nil, 0, err
@@ -138,7 +118,7 @@ func (repo TransactionRepo) ListByMonthAndYear(ctx context.Context, month time.M
 
 	dateTo := dateFrom.AddDate(0, 1, 0)
 
-	totalCount, err := repo.transactionDao.CountListByMonthAndYear(ctx, dateFrom, dateTo, user.Id)
+	totalCount, err := repo.transactionDao.CountListByMonthAndYear(ctx, dateFrom, dateTo, q.UserId)
 	if err != nil {
 		return transactions, 0, err
 	}
@@ -146,22 +126,13 @@ func (repo TransactionRepo) ListByMonthAndYear(ctx context.Context, month time.M
 		return transactions, totalCount, nil
 	}
 
-	entities, err := repo.transactionDao.ListByMonthAndYear(ctx, dateFrom, dateTo, offset, limit, isAsc, user.Id)
+	entities, err := repo.transactionDao.ListByMonthAndYear(ctx, dateFrom, dateTo, q.Offset, q.Limit, q.Asc, q.UserId)
 	if err != nil {
 		return transactions, 0, err
 	}
 
 	for _, e := range entities {
-		t := domain.Transaction{
-			Id:           e.Id,
-			Datetime:     e.Datetime,
-			CategoryId:   e.CategoryId,
-			CategoryName: e.CategoryName,
-			Description:  e.Description,
-			UserId:       e.UserId,
-			Amount:       money.New(e.Amount, e.Currency),
-		}
-		transactions = append(transactions, t)
+		transactions = append(transactions, domain.TransactionFromEntity(e))
 	}
 
 	return transactions, totalCount, nil
