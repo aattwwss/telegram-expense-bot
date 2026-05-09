@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sort"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -37,22 +38,36 @@ const (
 	defaultDB    = "testdb"
 )
 
-// StartPostgres starts a postgres container, runs init.sql, and returns a connection pool.
-// The caller is responsible for calling the returned cleanup function.
-func StartPostgres(ctx context.Context, initScriptPath string) (*pgxpool.Pool, func(), error) {
-	absPath, err := filepath.Abs(initScriptPath)
+// StartPostgres starts a postgres container, runs all .sql files in the migrations dir,
+// and returns a connection pool. The caller is responsible for calling the returned cleanup function.
+func StartPostgres(ctx context.Context, migrationsDir string) (*pgxpool.Pool, func(), error) {
+	absDir, err := filepath.Abs(migrationsDir)
 	if err != nil {
-		return nil, nil, fmt.Errorf("resolve init script path: %w", err)
+		return nil, nil, fmt.Errorf("resolve migrations dir: %w", err)
 	}
-	if _, err := os.Stat(absPath); err != nil {
-		return nil, nil, fmt.Errorf("init script not found at %s: %w", absPath, err)
+
+	entries, err := os.ReadDir(absDir)
+	if err != nil {
+		return nil, nil, fmt.Errorf("read migrations dir %s: %w", absDir, err)
+	}
+
+	var scripts []string
+	for _, e := range entries {
+		if !e.IsDir() && filepath.Ext(e.Name()) == ".sql" {
+			scripts = append(scripts, filepath.Join(absDir, e.Name()))
+		}
+	}
+	sort.Strings(scripts)
+
+	if len(scripts) == 0 {
+		return nil, nil, fmt.Errorf("no .sql files found in %s", absDir)
 	}
 
 	ctr, err := postgres.Run(ctx, defaultImage,
 		postgres.WithUsername(defaultUser),
 		postgres.WithPassword(defaultPass),
 		postgres.WithDatabase(defaultDB),
-		postgres.WithInitScripts(absPath),
+		postgres.WithInitScripts(scripts...),
 		testcontainers.WithWaitStrategy(
 			wait.ForLog("database system is ready to accept connections").
 				WithOccurrence(2).

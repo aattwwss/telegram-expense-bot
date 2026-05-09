@@ -71,9 +71,9 @@ Interactive flows (category selection, pagination, undo confirmation) use inline
 
 ### Databases and test infrastructure
 
-**Schema** is in `scripts/init.sql` — creates all tables, seeds reference data (currencies, transaction types, categories).
+**Schema** is in `scripts/sql/` — migrations run in sorted filename order (e.g. `0001_init.sql`). Creates all tables, seeds reference data (currencies, transaction types, categories).
 
-**Integration tests** use `testcontainers-go` to spin up a real Postgres container. The helper at `internal/testutil/db.go` starts the container, runs `init.sql`, and returns a `*pgxpool.Pool`. It auto-detects the Podman socket at the standard path.
+**Integration tests** use `testcontainers-go` to spin up a real Postgres container. The helper at `internal/testutil/db.go` starts the container, runs all `.sql` files from `scripts/sql/`, and returns a `*pgxpool.Pool`. It auto-detects the Podman socket at the standard path.
 
 Integration test files have `//go:build integration` at the top. Without the tag, they are not compiled — so `go test ./...` always works without any database or container runtime.
 

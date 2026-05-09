@@ -16,7 +16,7 @@ var testPool *pgxpool.Pool
 
 func TestMain(m *testing.M) {
 	ctx := context.Background()
-	pool, cleanup, err := testutil.StartPostgres(ctx, "../scripts/init.sql")
+	pool, cleanup, err := testutil.StartPostgres(ctx, "../scripts/sql")
 	if err != nil {
 		log.Fatalf("start postgres: %v", err)
 	}

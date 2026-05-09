@@ -12,7 +12,7 @@ Add @MyXpensesBot on telegram.
 ```bash
 curl https://api.telegram.org/bot=<token>/setWebhook?url=<domain>
 ```
-2. A postgres database and init the database with the [init.sql](https://github.com/aattwwss/telegram-expense-bot/blob/main/scripts/init.sql).
+2. A postgres database and init the database with the migrations in [scripts/sql/](https://github.com/aattwwss/telegram-expense-bot/blob/main/scripts/sql/).
 
 ## Run the bot
 1. Clone the repo
