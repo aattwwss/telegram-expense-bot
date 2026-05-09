@@ -61,6 +61,24 @@ Interactive flows (category selection, pagination, undo confirmation) use inline
 2. Struct is marshalled to JSON and embedded in the button's callback data
 3. `MessageContext` table stores the original user message text, allowing subsequent callbacks to recover context (e.g., re-parsing the original amount when the user picks a category)
 
+### Dependency injection
+
+`main.go` wires: config → `pgxpool.Pool` → DAOs → repos → handlers → bot.
+
+- **DAOs** are concrete structs (`dao.UserDAO`, `dao.TransactionDAO`, etc.) — repos depend on them directly.
+- **Handlers** use interfaces defined in `handler/repos.go` (`UserRepo`, `TransactionRepo`, `MessageContextRepo`, `TransactionTypeRepo`, `CategoryRepo`) — this lets handler tests use mocks without a database.
+- **Mocks** for handler tests live in `handler/mock_repos_test.go`. Each mock is a struct with function fields the test sets to control behavior.
+
+### Databases and test infrastructure
+
+**Schema** is in `scripts/init.sql` — creates all tables, seeds reference data (currencies, transaction types, categories).
+
+**Integration tests** use `testcontainers-go` to spin up a real Postgres container. The helper at `internal/testutil/db.go` starts the container, runs `init.sql`, and returns a `*pgxpool.Pool`. It auto-detects the Podman socket at the standard path.
+
+Integration test files have `//go:build integration` at the top. Without the tag, they are not compiled — so `go test ./...` always works without any database or container runtime.
+
+**CI** is in `.github/workflows/test.yml` — runs `unit`, `integration`, and `vet` jobs on PRs to `main` and pushes to `main`. Integration tests use Docker on the GitHub runner.
+
 ### Key dependencies
 
 - `go-telegram-bot-api/v5` — Telegram Bot API client
@@ -70,3 +88,4 @@ Interactive flows (category selection, pagination, undo confirmation) use inline
 - `excelize/v2` — Excel export (`/export` command)
 - `caarlos0/env/v6` — env var parsing into config struct
 - `joho/godotenv` — `.env` file loading
+- `testcontainers-go` + `testcontainers-go/modules/postgres` — integration test containers

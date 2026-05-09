@@ -33,3 +33,9 @@ jobs:
         with:
           go-version: "1.26"
       - run: go vet ./...
+
+  gate:
+    needs: [unit, integration, vet]
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "All checks passed"
