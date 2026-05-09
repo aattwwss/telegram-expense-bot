@@ -1,6 +1,6 @@
 module github.com/aattwwss/telegram-expense-bot
 
-go 1.25.0
+go 1.26.0
 
 require (
 	github.com/Rhymond/go-money v1.0.10
